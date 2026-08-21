@@ -29,6 +29,18 @@ survives the session, is portable between agents, permissioned, and yours to kee
 - **Something broken?** [Troubleshooting](/troubleshooting) covers the failures people
   actually hit.
 
+## These docs are open source
+
+Everything on this site lives as markdown in
+**[OneDro1d/onedroid-docs](https://github.com/OneDro1d/onedroid-docs)**, and the site is
+built from it. **The repo is the source of truth** — if a page here disagrees with the
+markdown, the markdown is right and the page is stale.
+
+That is not a detail about our build. It is the same claim the products make: you should be
+able to check what we told you, rather than take it on faith. Found something wrong, or
+missing? [Open an issue](https://github.com/OneDro1d/onedroid-docs/issues) or edit the page
+directly — every page footer links to the exact file it came from.
+
 ## For agents reading this
 
 Every page here is available as markdown: append `.md` to any path, or send an AI-agent

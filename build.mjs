@@ -20,6 +20,7 @@ const ROOT = dirname(new URL(import.meta.url).pathname);
 const CONTENT = join(ROOT, "content");
 const DIST = join(ROOT, "dist");
 const SITE = "https://docs.onedroid.ai";
+const REPO = "https://github.com/OneDro1d/onedroid-docs";
 const CHECK = process.argv.includes("--check");
 
 // ---------------------------------------------------------------- frontmatter
@@ -129,6 +130,10 @@ th{background:var(--code);font-weight:600}
 hr{border:0;border-top:1px solid var(--line);margin:2.5em 0}
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:14px}
 footer .wrap{display:block;padding-top:24px;padding-bottom:48px}
+footer p{margin:0 0 .7em;max-width:70ch}
+header nav.top{display:flex;gap:20px;font-size:14px}
+header nav.top a{text-decoration:none;color:var(--muted)}
+header nav.top a:hover{color:var(--fg)}
 .src{margin-top:3em;padding-top:1.2em;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
 @media(max-width:820px){.wrap{grid-template-columns:1fr;gap:0}nav.side{position:static;max-height:none;padding:24px 0 0;border-bottom:1px solid var(--line)}main{padding-top:24px}}
 `.trim();
@@ -153,17 +158,17 @@ function page(p) {
 <style>${CSS}</style>
 </head>
 <body>
-<header><div class="wrap"><a class="brand" href="/">ONEDROID <span>Docs</span></a><a href="https://synapse.onedroid.ai">Open Synapse</a></div></header>
+<header><div class="wrap"><a class="brand" href="/">ONEDROID <span>Docs</span></a><nav class="top"><a href="${REPO}">Source on GitHub</a><a href="https://synapse.onedroid.ai">Open Synapse</a></nav></div></header>
 <div class="wrap">
 <nav class="side">${nav(p.url)}</nav>
 <main>
 <h1>${esc(p.meta.title)}</h1>
 <p class="lede">${esc(p.meta.description)}</p>
 ${html}
-<p class="src">This page is generated from <a href="https://github.com/OneDro1d/onedroid-docs/blob/main/content/${p.rel}"><code>content/${p.rel}</code></a>. Read it as markdown at <a href="${mdHref}"><code>${mdHref}</code></a>. Something wrong? <a href="https://github.com/OneDro1d/onedroid-docs/issues">Open an issue</a>.</p>
+<p class="src"><strong>Source of truth:</strong> this page is generated from <a href="${REPO}/blob/main/content/${p.rel}"><code>content/${p.rel}</code></a> in a public repo. The repo is authoritative — if this page and the markdown disagree, the markdown is right and the site is stale. <a href="${REPO}/edit/main/content/${p.rel}">Edit this page</a> · <a href="${mdHref}">read it as markdown</a> · <a href="${REPO}/issues">report a problem</a>.</p>
 </main>
 </div>
-<footer><div class="wrap">OneDroid (onedroid.ai) is AI agent infrastructure by Providentia Worldwide. Unrelated to Android or the OneDroid Android projects.</div></footer>
+<footer><div class="wrap"><p>These docs are open source. Every page lives as markdown in <a href="${REPO}">OneDro1d/onedroid-docs</a> and this site is built from it — one copy, publicly auditable, and readable by any agent.</p><p>OneDroid (onedroid.ai) is AI agent infrastructure by Providentia Worldwide. Unrelated to Android or the OneDroid Android projects.</p></div></footer>
 </body>
 </html>
 `;

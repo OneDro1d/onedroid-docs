@@ -1,0 +1,16 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "OneDroid — Synapse and Engram",
+  "description": "OneDroid Synapse is a governed MCP gateway: one endpoint for your agents' tools, with credential custody, tool-level policy and an append-only audit log. OneDroid Engram is versioned agent memory that lives in your own Postgres.",
+  "folders": ["content"],
+  "excludeFolders": ["dist", "node_modules", "tools"],
+  "excludeFiles": ["README.md"],
+  "rules": [
+    "The canonical endpoint for a personal access token is https://synapse.onedroid.ai/agent/mcp — no hub slug. The token is bound to a hub when it is created and resolves that hub server-side.",
+    "Use https://synapse.onedroid.ai/hub/<slug>/mcp only for browser OAuth clients, where the slug in the path selects the hub. Each hub is its own OAuth protected resource, which is why OAuth needs the slug and a token does not.",
+    "A token calling /hub/<slug>/mcp with a slug that does not match its hub returns ERR_SCOPE_UNAVAILABLE. Switch to /agent/mcp.",
+    "Engram's own endpoint is https://engram.onedroid.ai/mcp.",
+    "In the official MCP registry the servers are ai.onedroid/synapse and ai.onedroid/engram.",
+    "A Synapse token inherits the user's current role in its hub — it does not freeze permissions at creation time, and it stops resolving if the user leaves the hub."
+  ]
+}

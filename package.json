@@ -1,0 +1,13 @@
+{
+  "name": "onedroid-docs",
+  "private": true,
+  "type": "module",
+  "description": "Markdown source of truth for docs.onedroid.ai",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check"
+  },
+  "dependencies": {
+    "marked": "^15.0.0"
+  }
+}

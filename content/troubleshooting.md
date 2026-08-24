@@ -43,9 +43,14 @@ Connections**. Authentication and upstream connections are separate things.
 
 ## The connections count stays at zero
 
-An admin has to enable upstream services first under **Connect → Connections** — members
-cannot add their own. Once a connection is enabled, each member supplies their own token or
-OAuth login for it.
+Expected on a fresh hub. Upstream services are enabled under **Connect → Connections**, and
+only an admin can enable them — so the question is which hub this is.
+
+**If you created the hub, you administer it** and this is simply the next step of your own
+setup — there is nobody to ask. **If you were invited into someone else's hub**, it is not
+yours to fix: the token is fine, the hub has no upstreams, and the owner has to enable them.
+
+Once a connection is enabled, each member supplies their own token or OAuth login for it.
 
 ## Signed in, but the hub is missing or wrong
 

@@ -46,6 +46,12 @@ string then surfaces here rather than after your hub exists.
 A hub is your workspace: it holds your connections, your team and your permissions. Give it
 a name and click **Create hub**.
 
+**The hub you create is yours, and you administer it.** Nobody provisions it for you and
+there is nobody to ask: sign-up, hub, tokens and upstream connections are all self-service.
+The **Admin** section in the left nav is not decorative — it is yours. The one thing that
+changes this is being *invited* into a hub somebody else created; then you hold whatever
+role they granted you. See [step 4](#4-find-your-way-around).
+
 > **Your slug will not be what you typed.** Synapse appends a short unique suffix, so
 > `team-dev-1` becomes something like `team-dev-1-dj8p87`. Take the real slug from the
 > browser URL or the Hub Details panel before you bookmark or share a link.
@@ -63,6 +69,14 @@ is expected, not a failure. The left nav splits four ways:
 - **Manage** — members, groups, API tokens, database
 - **Admin** — tool toggles, sharing, invites, activity logs, reporting
 
-> If the connections count stays at zero, an admin has to enable upstream services first
-> under **Connect → Connections** — members cannot add their own. Once a connection is
-> enabled, each member supplies their own token or OAuth login for it.
+> **A fresh hub has zero connections. That is expected, not a failure.** Upstream services
+> are enabled under **Connect → Connections**, and only an admin can enable them — so which
+> situation you are in decides whether this is yours to do.
+>
+> - **You created this hub.** Then you administer it, and enabling upstreams is the next
+>   step of your own setup. Nothing to wait for.
+> - **You were invited into someone else's hub.** Then it is not yours to fix. You will hold
+>   a perfectly valid token, see no tools, and have every reason to blame the token. Ask
+>   whoever owns the hub.
+>
+> Once a connection is enabled, each member supplies their own token or OAuth login for it.

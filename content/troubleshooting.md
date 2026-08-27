@@ -109,13 +109,21 @@ That screen now says **"Your session has expired"** and gives you **Sign in agai
 
 > **If you were stuck here, a second thing was probably also true.** *Sign in with Microsoft*
 > was briefly offered and never worked for anyone; it has been removed. Sign out fully, then
-> use **Continue with Google** or the email-code option. And a password reset will not help —
-> [there are no passwords here](#i-cannot-sign-in-and-reset-password-does-nothing).
+> use **Continue with Google** or the emailed-code option. And a password reset is very
+> unlikely to help —
+> [here is why](#i-cannot-sign-in-and-resetting-my-password-does-not-help).
 
-## I cannot sign in, and "reset password" does nothing
+## I cannot sign in, and resetting my password does not help
 
-There are **no passwords** on OneDroid accounts. Nothing to reset, so a reset does nothing
-and tells you nothing. Sign in with **Google** or with an **email code** instead.
+**A password reset is very unlikely to be your fix.** Two reasons, depending on how you
+signed up:
+
+- **You signed up with Google.** Your account has no password at all, so there is nothing
+  for a reset to change. Use **Continue with Google**.
+- **You signed up with an email address.** Sign-in goes through the **code or link emailed
+  to you**, not the password. Ask for the code rather than trying to type a password.
+
+Either way, the way back in is Google or an emailed code — not the password field.
 
 ## Signed in, but the hub is missing or wrong
 

@@ -122,14 +122,21 @@ workspace**, which opens a form with four required fields:
 
 The email must be the account the API token belongs to. You can add several workspaces.
 
-### Microsoft 365 — a full-page redirect, and it may be unavailable
+### Microsoft 365 — not available on synapse.onedroid.ai yet
 
-Microsoft redirects the whole page rather than opening a popup, so expect to leave the app
-and come back.
+**As things stand, you cannot connect Microsoft 365 here.** The button is disabled and says
+so. Unlike Google there is **no bring-your-own-app option**, so this needs a platform-level
+Microsoft app that does not exist yet — nothing you can do in the UI will change it.
 
-Unlike Google there is **no bring-your-own-app option**, so Microsoft needs a platform app
-before anyone can connect. Where that is absent the button is disabled and says so. If you
-see that, it is a deployment-level gap and no amount of clicking will fix it.
+You can check for yourself rather than taking our word for it; `microsoft_enabled` says
+whether it has landed:
+
+```bash
+curl -s https://synapse.onedroid.ai/api/config
+```
+
+When it is enabled, Microsoft redirects the whole page rather than opening a popup, so
+expect to leave the app and come back.
 
 ## Reading the status an agent sees
 

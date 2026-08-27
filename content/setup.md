@@ -63,6 +63,8 @@ is expected, not a failure. The left nav splits four ways:
 - **Manage** — members, groups, API tokens, database
 - **Admin** — tool toggles, sharing, invites, activity logs, reporting
 
-> If the connections count stays at zero, an admin has to enable upstream services first
-> under **Connect → Connections** — members cannot add their own. Once a connection is
-> enabled, each member supplies their own token or OAuth login for it.
+> A fresh hub has no connections until somebody adds them, and adding them is an **admin**
+> gesture. On a hub you created, that is you — there is nobody to wait for. Enabling a
+> connection is only half the job: each member then supplies their own credential for it.
+> See [Connections and credentials](/connections), which is where most first-time setups
+> actually stall.

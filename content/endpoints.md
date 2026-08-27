@@ -3,7 +3,7 @@ title: Endpoints and authentication
 nav: Endpoints and auth
 description: Two ways in — a personal access token, or browser OAuth — and they are not interchangeable.
 section: Reference
-order: 4
+order: 10
 ---
 
 Synapse has two authentication avenues, and which one you use determines which URL you use.

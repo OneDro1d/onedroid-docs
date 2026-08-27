@@ -73,7 +73,29 @@ const pages = walk(CONTENT)
 
 // ---------------------------------------------------------------- rendering
 
-marked.setOptions({ mangle: false, headerIds: true, gfm: true });
+marked.setOptions({ gfm: true });
+
+// Heading anchors, by hand. `headerIds` was a marked option until v13 removed it; the call
+// kept accepting it silently, so every `#anchor` link on the site pointed at nothing while
+// the build reported success. Deep links are how Troubleshooting sends you to the one curl
+// probe that matters, so this is load-bearing, not decoration.
+const slug = (s) =>
+  s
+    .toLowerCase()
+    .replace(/<[^>]*>/g, "")     // strip inline markup (code spans, emphasis)
+    .replace(/&[a-z]+;/g, "")    // strip entities the renderer already emitted
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+
+marked.use({
+  renderer: {
+    heading({ tokens, depth }) {
+      const text = this.parser.parseInline(tokens);
+      return `<h${depth} id="${slug(text)}">${text}</h${depth}>\n`;
+    },
+  },
+});
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 

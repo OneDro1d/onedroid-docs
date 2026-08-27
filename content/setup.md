@@ -10,13 +10,22 @@ Onboarding is two screens. Only the first carries any weight.
 
 ## 1. Sign in
 
-Go to [synapse.onedroid.ai](https://synapse.onedroid.ai) and click **Sign in**. Three
-options: Google, Microsoft, or an email address. First time here, use **Sign up** instead.
+Go to [synapse.onedroid.ai](https://synapse.onedroid.ai) and click **Sign in**. Two ways in:
 
-> **Use the same method every time.** Sign-in is handled by Clerk, and signing in with
-> Google when you originally signed up with Microsoft creates a **separate account** — even
-> with the identical email address. If you end up signed in with no hub, or the wrong one,
-> this is almost always why.
+- **Continue with Google**
+- **An email address** — you get a one-time code by email
+
+> **There is no password, and there is no Microsoft sign-in.** Both are worth knowing before
+> you go looking for them:
+>
+> - **No password.** Accounts here have none, so *reset password* has nothing to reset. If
+>   you cannot get in, a password reset is not the fix and never will be.
+> - **No Microsoft.** The button existed briefly and never worked for anyone; it has been
+>   removed. If you tried it and failed, that was the product, not you.
+
+> **Use the same method every time.** Sign-in is handled by Clerk, and Google and
+> email-code sign-ins on the *same address* are still two different accounts. If you end up
+> signed in with no hub, or the wrong one, this is almost always why.
 
 ## 2. Choose where your data is stored
 

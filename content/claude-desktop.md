@@ -85,6 +85,6 @@ Worth knowing before you grant it anything:
 | `ERR_SCOPE_UNAVAILABLE` | The slug in the URL is not the hub you are signed into. Recheck the suffix |
 | Connects, but no tools | The hub has no connections enabled yet |
 | Connects, tools listed, every call refuses | You have not saved your credential for that connection |
-| Signed in, but it is the wrong hub — or no hub | Almost certainly a second account. Google and Microsoft on the *same* email are two different accounts. [More](/troubleshooting#signed-in-but-the-hub-is-missing-or-wrong) |
+| Signed in, but it is the wrong hub — or no hub | Almost certainly a second account. Google and email-code sign-in on the *same* address are two different accounts. [More](/troubleshooting#signed-in-but-the-hub-is-missing-or-wrong) |
 
 More in [Troubleshooting](/troubleshooting).

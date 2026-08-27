@@ -98,23 +98,33 @@ service can appear many times with different names and separate credentials. Con
 
 ## Onboarding: "OneDroid Managed" → **Next** flashes and comes back
 
-The button briefly reads *Connecting…*, then returns to **Next** and the screen never
-advances. This is an **expired sign-in session**, not a database problem — the request is
-being rejected before it reaches the database step at all.
+**Fixed.** If you still see it, you are on a cached page — hard-refresh.
 
-The screen now tells you so and offers **Sign in again**. Take it, and start the flow over.
+The button briefly read *Connecting…*, then returned to **Next** and never advanced. It was
+an **expired sign-in session**, not a database problem: every request the page made was
+being rejected, and the error had nowhere to render on that screen, so it looked like a dead
+button.
 
-> ⚠️ If signing in again lands you in the same place, you have hit a known open issue rather
-> than a mistake of your own. It shows up when the account was created with one sign-in
-> method and is being used with another — the [Clerk split-account
-> problem](#signed-in-but-the-hub-is-missing-or-wrong) — and re-authenticating does not
-> clear it. Email <michal@onedroid.ai> rather than retrying; we want the report.
+That screen now says **"Your session has expired"** and gives you **Sign in again**.
+
+> **If you were stuck here, a second thing was probably also true.** *Sign in with Microsoft*
+> was briefly offered and never worked for anyone; it has been removed. Sign out fully, then
+> use **Continue with Google** or the email-code option. And a password reset will not help —
+> [there are no passwords here](#i-cannot-sign-in-and-reset-password-does-nothing).
+
+## I cannot sign in, and "reset password" does nothing
+
+There are **no passwords** on OneDroid accounts. Nothing to reset, so a reset does nothing
+and tells you nothing. Sign in with **Google** or with an **email code** instead.
 
 ## Signed in, but the hub is missing or wrong
 
-Almost always a second account. Sign-in is handled by Clerk, and Google and Microsoft
-sign-ins with the *same email address* are still different accounts. Sign out and back in
-with the method you originally used.
+Almost always a second account. Sign-in is handled by Clerk, and signing in with **Google**
+versus with an **email code** on the *same address* still produces two different accounts,
+each with its own hubs. Sign out and back in with the method you originally used.
+
+If you are not sure which that was, the account holding your hub is the one to keep — sign
+in each way once and see which shows the hub.
 
 ## 404 deep-linking to a settings page
 

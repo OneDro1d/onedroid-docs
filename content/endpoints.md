@@ -27,6 +27,13 @@ selects the hub. A token can reach it, but only if the slug matches the hub the 
 bound to; a mismatch returns `ERR_SCOPE_UNAVAILABLE`. There is no reason to prefer it for a
 token client.
 
+> **There is a third URL, and it is the quiet one.** A bare `https://synapse.onedroid.ai/mcp`
+> also answers — but it is **not hub-scoped**, and exposes only the baseline self-service
+> tools rather than your hub's connections. This fails in the most annoying way possible: no
+> error, no 401, just a much shorter tool list than you expected. If an agent connects
+> cleanly and then cannot see the tools you know are on your hub, check for a missing
+> `/agent` before anything else.
+
 ## Why OAuth needs the slug and a token does not
 
 This is not an arbitrary difference. **Each hub is its own OAuth protected resource.**

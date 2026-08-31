@@ -40,7 +40,19 @@ https://engram.onedroid.ai/mcp
 ```
 
 Tokens look like `engram_` followed by 32 hex characters. Mint one from the **API Tokens**
-page, which shows the plaintext once, or with `engram_create_token`. Pass it as a header:
+page, which shows the plaintext once, or with `engram_create_token`.
+
+**There are two kinds, and the difference matters more than the name suggests:**
+
+| | Reaches | Use it for |
+|---|---|---|
+| **Global admin token** | *every* library you can access — the page describes it as "like being logged in" | your own single MCP client connection |
+| **Library token** | one library, nothing else | anything shared: a teammate, a CI pipeline, an agent you want bounded |
+
+Reach for the library token by default. A global admin token pasted into a shared pipeline
+hands over everything you can read, and nothing in the tool call will remind you of that.
+
+Pass it as a header:
 
 ```bash
 curl -s https://engram.onedroid.ai/mcp \
@@ -55,6 +67,9 @@ curl -s https://engram.onedroid.ai/mcp \
 With no credential, or a bad one, you get **HTTP 401 with the plain-text body
 `Unauthorized`** — not JSON. A JSON parse error on that response means you are unauthorised,
 not that the service is broken.
+
+A legacy SSE endpoint also exists at `https://engram.onedroid.ai/mcp/sse` for clients that
+cannot do streamable HTTP. Prefer `/mcp`.
 
 You can also reach Engram **through a Synapse hub** as a connection, which is how you get it
 audited alongside your other tools. It is a token-type connection: paste the Engram token

@@ -24,6 +24,12 @@ Developers wiring Claude Code, CI, or a script want [the token route](/quickstar
 
 ## Your connector URL
 
+**You do not have to build this by hand.** Your hub has an **AI Clients** page under
+**Connect**, and it prints the exact URL for your hub along with per-client instructions.
+Copy it from there — that is the shortest path and it cannot be typed wrong.
+
+The shape is:
+
 ```
 https://synapse.onedroid.ai/hub/<your-slug>/mcp
 ```
@@ -45,13 +51,20 @@ In Claude (desktop app or claude.ai), open **Settings → Connectors**, choose t
 connector, and paste the URL above. Other MCP-capable assistants have an equivalent screen,
 usually called connectors, integrations, or MCP servers.
 
-A OneDroid consent screen opens in your browser. Approve it, and the assistant registers
-itself — you do not create anything by hand. Behind that screen it is standard OAuth with
-PKCE and dynamic client registration, which is why there is no client ID for you to copy.
+A OneDroid consent screen opens in your browser. Approve it and you are connected. Most
+clients register themselves automatically — that is standard OAuth with PKCE and dynamic
+client registration, and there is nothing for you to copy.
+
+> **If your client asks for a Client ID and Secret, it is not broken and you are not stuck.**
+> Some clients want them entered by hand, usually under *Advanced Settings*. The **AI
+> Clients** page has a **Generate credentials** control with presets for Claude, ChatGPT and
+> a generic option. Generate there, paste into the client. Treat the secret like any other
+> password.
 
 > Client UIs move. If the menu names above do not match what you see, look for wherever your
 > assistant adds an MCP server and give it the same URL — the OneDroid side is identical
-> either way.
+> either way. The **AI Clients** page carries step-by-step instructions for Claude.ai,
+> Cursor, Claude Code and ChatGPT, and those track the product rather than this page.
 
 ## Confirm it worked
 

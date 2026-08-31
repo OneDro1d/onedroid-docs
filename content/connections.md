@@ -46,6 +46,16 @@ created them**. `engram`, `engram-prod` and `engram-work-pww` are three aliases 
 the same Engram service, and your credential for one is a different stored row from your
 credential for another. Connecting `engram` does not connect `engram-prod`.
 
+The page tells you this if you read the group headings. Each one names the service, the auth
+kind and the count — `ENGRAM (PAT) · 1 alias`, `SLACK (OAUTH) · 1 alias` — with the alias's
+own name on the row beneath.
+
+**Most importantly, the page is in two halves.** The top is **MCP Servers** — what is
+actually on your hub. Below it sits a collapsed **Catalogue — not on this hub**, which is
+everything available that you have *not* added. If you are staring at more copies of a
+service than makes sense, check which half you are in: the catalogue is a menu, not your
+hub. Add one to your hub with **Add remote MCP**.
+
 > **If you are not sure which alias is yours, ask the person who created the hub rather
 > than guessing.** Picking the wrong one is not dangerous — you simply cannot credential a
 > service you have no login for — but a tool call that "worked" against the wrong alias
@@ -61,12 +71,20 @@ to happen, the kind is usually why.
 
 ### Token connections — an inline field, not a popup
 
-Engram, Supabase and most third-party MCP servers take a token. There is **no OAuth popup**.
-A password field appears in the row, labelled *Paste API token*. Paste it and click
-**Connect**; the credential is saved and verified in one step.
+Engram, Supabase and most third-party MCP servers take a token — the row header marks them
+**(PAT)** and the row reads `streamable-http · token`. There is **no OAuth popup**. A
+password field appears in the row itself. Paste the token and click **Connect**; it is saved
+and verified in one step.
 
 If you clicked Connect expecting a popup and saw nothing move, look for the field in the row
 you just expanded. That is the whole flow.
+
+Helpfully, these rows carry a **Get your token here** link straight to the service that
+issues it, so you do not have to go hunting for where a token comes from.
+
+Once connected, the row offers **Verify**, **Reconnect** and **Disconnect**. **Verify** is
+the one worth knowing: it proves the credential still works *now*, rather than that it was
+accepted once.
 
 ### OAuth connections — a popup you may have blocked
 
@@ -81,8 +99,10 @@ report back when the consent screen finishes.
 Google opens a popup, but only once the hub has a Google OAuth app to connect *through*.
 
 **On `synapse.onedroid.ai` there is no platform-wide Google app**, so you supply your own.
-The Connect button stays disabled until you do, with the tooltip *"Save your own Google app
-below first — this hub has no Google app to connect through."* Trying anyway returns:
+Where a hub has no Google app at all the Connect button is disabled, with the tooltip *"Save
+your own Google app below first — this hub has no Google app to connect through."* Other
+deployments do have one, so do not read a live-looking button as proof either way. Clicking
+without an app returns:
 
 ```
 No Google app is configured for this hub. Open Add app and save your own Google
@@ -124,15 +144,16 @@ The email must be the account the API token belongs to. You can add several work
 
 ### Microsoft 365 — not available on synapse.onedroid.ai yet
 
-**As things stand, you cannot connect Microsoft 365 here.** The button is disabled and says
-so. Unlike Google there is **no bring-your-own-app option**, so this needs a platform-level
-Microsoft app that does not exist yet — nothing you can do in the UI will change it.
+**As things stand, connecting Microsoft 365 on `synapse.onedroid.ai` will not work.** Unlike
+Google there is **no bring-your-own-app option**, so it needs a platform-level Microsoft app
+that is not configured there yet.
 
-You can check for yourself rather than taking our word for it; `microsoft_enabled` says
-whether it has landed:
+The row still renders with a Connect button, so a live-looking button is not evidence it
+will work. Check the flag rather than the button:
 
 ```bash
 curl -s https://synapse.onedroid.ai/api/config
+# "microsoft_enabled": false  -> not available, nothing you can do in the UI changes it
 ```
 
 When it is enabled, Microsoft redirects the whole page rather than opening a popup, so

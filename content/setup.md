@@ -15,6 +15,8 @@ Go to [synapse.onedroid.ai](https://synapse.onedroid.ai) and click **Sign in**. 
 - **Continue with Google**
 - **An email address** — you get a one-time code, or a sign-in link, by email
 
+![The Synapse sign-in screen: the OneDroid logo, the word Synapse, and a single Sign in button](/img/setup/sign-in.png)
+
 > **There is no Microsoft sign-in.** The button was offered briefly and never worked for
 > anyone; it has been removed. If you tried it and failed, that was the product, not you.
 
@@ -34,6 +36,8 @@ can change it later under **Manage → Database**.
 | Best for | Getting started, evaluating, teams with no data-residency constraint | Anyone who needs to own the data |
 | If you leave | Export | The data simply stays where it already was |
 
+![The storage-choice step: two cards, OneDroid Managed and Bring Your Own Database, with Managed selected](/img/setup/choose-storage.png)
+
 > **The one mistake everybody makes.** Leave the literal `[YOUR-PASSWORD]` placeholder in
 > the connection string exactly as it appears. **Do not substitute your real password.**
 > Synapse splices the password in from the separate field at connection time, which is why
@@ -50,6 +54,8 @@ string then surfaces here rather than after your hub exists.
 A hub is your workspace: it holds your connections, your team and your permissions. Give it
 a name and click **Create hub**.
 
+![The hub-name step: a Hub Name field reading "Acme Docs" and a slug field reading "acme-docs"](/img/setup/name-your-hub.png)
+
 > **Your slug will not be what you typed.** Synapse appends a short unique suffix, so
 > `team-dev-1` becomes something like `team-dev-1-dj8p87`. Take the real slug from the
 > browser URL or the Hub Details panel before you bookmark or share a link.
@@ -59,8 +65,12 @@ it — see [Endpoints and authentication](/endpoints).
 
 ## 4. Find your way around
 
-You land on the dashboard. A fresh hub shows 1 member, 1 group and zero connections — that
-is expected, not a failure. The left nav splits four ways:
+You land on the dashboard. A fresh hub shows 1 member and zero connections — that is
+expected, not a failure. (The group count reads higher than 1: it includes system "Owners"
+groups shared across the managed tenancy, not just this hub's own.) The left nav splits
+four ways:
+
+![The dashboard of a fresh hub: stat cards for Members, Groups, Connections and API Tokens, a Getting Started checklist, and a Hub Details panel showing the name, slug and created date](/img/setup/dashboard.png)
 
 - **Overview** — status and the getting-started checklist
 - **Connect** — connections, AI clients, tools, packs

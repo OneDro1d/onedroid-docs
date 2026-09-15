@@ -17,7 +17,10 @@ the top-left is on the hub you want** — tokens are bound to one hub and one us
 choice matters. Then go to **Manage → API Tokens** and click **Create token**.
 
 Give it a name you will recognise later (`claude-code-laptop`, `ci-nightly`) and an expiry.
-Prefer a bounded lifetime for anything that is not on a rotation schedule.
+Prefer a bounded lifetime for anything that is not on a rotation schedule. The expiry
+choices are **30 days, 90 days, 1 year, or No expiration**.
+
+![The Create API Token dialog: a Token Name field and an Expiration dropdown set to 90 days](/img/quickstart/create-token.png)
 
 > **Copy the token before dismissing the dialog.** The plaintext is shown once. If you lose
 > it you can **Reveal** it later from the tokens table, or **Rotate** to issue a new one —

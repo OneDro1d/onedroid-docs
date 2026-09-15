@@ -33,7 +33,7 @@ New to Engram? Start with [Using Engram](/engram-usage); this page is for lookin
 | `engram_list_libraries` | — | Libraries you belong to, with your `role` and a `namespace_count`. |
 | `engram_list_my_libraries` | — | Every library you have **any** role on — owned or shared with you — with the `effective_role` for each. |
 | `engram_my_role_on_library` | `library_id` | Your effective role on one library: `owner`, `read-write`, `read`, or an empty string for none. Ownership wins; otherwise the highest role across your access groups. |
-| `engram_delete_library` | `library_id` | Owner-only. Fails while the library still contains namespaces — move or delete them first. |
+| `engram_delete_library` | `library_id` | Fails while the library still contains namespaces — move or delete them first. On a library we had no role on it failed with `access denied: no role on library`. |
 | `engram_transfer_library_ownership` | `library_id`, `new_owner_email`, `confirm: true` | Owner-only. You become `read-write`. The new owner must have signed in to OneDroid at least once, or it fails with `new owner has not signed in yet`. |
 | `engram_toggle_library_audit` | `library_id` | Owner-only. `policy`: `off`, `on`, or `forced_on` — on and locked, so it can no longer be relaxed. Setting the current value returns `noop: true`. The toggle is always audited, whatever you set. |
 
@@ -44,9 +44,9 @@ New to Engram? Start with [Using Engram](/engram-usage); this page is for lookin
 | `engram_create_namespace` | `name` | **Takes no library argument.** The namespace goes into a library you own — ours landed in the account's original *Personal* library, not the one we had just created. Check with `engram_list_libraries`, then move it. Names: letters, numbers, dots, hyphens, underscores. |
 | `engram_list_namespaces` | — | Namespaces you can reach, with object and chunk counts and their library's name. See [Known issues](/engram-usage#known-issues): some libraries' namespaces are missing from this list. |
 | `engram_list` | `collection` | One namespace's counts and its objects (id, title, kind, format, source, dates). Pages with `limit` (default 100, max 500) and `offset`. A wrong name returns `collection not found`. |
-| `engram_move_namespace` | `namespace_id`, `target_library_id` | You need owner or read-write on the target. **Pass the namespace's UUID:** a name fails with `invalid input syntax for type uuid`, even though the argument says "name or ID". Returns `{"status": "moved"}`. |
+| `engram_move_namespace` | `namespace_id`, `target_library_id` | You must own the target library or be an editor of it. **Pass the namespace's UUID:** a name fails with `invalid input syntax for type uuid`, even though the argument says "name or ID". Returns `{"status": "moved"}`. |
 | `engram_delete_namespace` | `collection` | Deletes the namespace and everything in it. No undo through the tools. |
-| `engram_reembed` | `collection` | Embeds any chunks that are missing embeddings, paging until the namespace is complete. Returns counts, e.g. `{"embedded": 0, "failed": 0, "status": "ok"}` when nothing was missing. |
+| `engram_reembed` | `collection` | Embeds chunks that have no embedding, 500 at a time, up to 100,000 per call; it stops early if a page makes no progress. It does not redo chunks that already have one. Returns counts, e.g. `{"embedded": 0, "failed": 0, "status": "ok"}` when nothing was missing. |
 
 ## Objects
 
@@ -54,9 +54,9 @@ New to Engram? Start with [Using Engram](/engram-usage); this page is for lookin
 |---|---|---|
 | `engram_write` | `collection`, `title`, `content` | Adds a **new** object — calling it twice makes two. Optional `kind` (default `document`). Returns the new `id`, a `commit_sha`, and `chunk_count` / `embedded_count`. Content travels through your model provider; for sensitive material use the [web app](/engram-web-app#adding-an-object). |
 | `engram_read` | `document_id` | One object by UUID: content, kind, format, `content_hash`, author and dates. |
-| `engram_update` | `object_id`, `content` | Replaces an existing object's content, and optionally `title` or `kind`, recording a new version. **Returns `noop: true` and records nothing when the content is unchanged.** |
+| `engram_update` | `object_id`, `content` | Replaces an existing object's content, and optionally `title` or `kind`, recording a new version. **Returns `noop: true` and changes nothing when nothing changed.** One exception: if the object has no history yet, its current content is first saved as a `baseline:` version, and the response carries `baseline_commit_sha`. |
 | `engram_delete` | `object_id` | Deletes the object, its chunks, embeddings and stored file. Returns `{"deleted": true}`. |
-| `engram_history` | `object_id` | Every version, newest first: `commit_sha`, author, message (`add: …`, `update: …`, `restore: … to <sha>`), timestamp. |
+| `engram_history` | `object_id` | Every version, newest first: `commit_sha`, author, message (`add: …`, `update: …`, `restore: … to <sha>`, or `baseline: …`), timestamp. |
 | `engram_diff` | `object_id`, `from_sha`, `to_sha` | A unified diff between two versions from `engram_history`. |
 | `engram_restore` | `object_id`, `commit_sha` | Brings back an earlier version **as a new version** — history keeps everything, including the version you restored over. Returns `new_commit_sha`. |
 | `engram_register_link` | `collection`, `url` | Fetches an `https://` page into the namespace and re-fetches it every `fetch_interval_seconds` (default 3600, minimum 300). `http://` fails with `ssrf: scheme must be https: got "http"`. **No tool removes a link** — delete it in the [web app](/engram-web-app#external-links). |
@@ -67,7 +67,7 @@ New to Engram? Start with [Using Engram](/engram-usage); this page is for lookin
 |---|---|---|
 | `engram_search` | `query` | Hybrid search — meaning and keywords together. Optional `collection`, `limit` (default 10, max 50), `vector_weight` (default 0.7), `min_score` (default 0.35). Results are **chunks**, so one object can appear several times. How to read the scores: [Searching it back](/engram-usage#searching-it-back). |
 | `engram_search_graph` | `query` | `engram_search`, then follows graph links from the top hits (`anchor_count`, default 5) to pull in connected objects. Each result says whether it came from `search` or `graph`, with `search_score`, `graph_score` and `merged_score`. |
-| `engram_global_search` | `query` | A **word match** on titles and content across every library you can reach — not semantic. Optional `library_filter`, `namespace_filter`, `limit` (default 20, max 100). The web app's search box uses the same match. |
+| `engram_global_search` | `query` | A **text match** — the whole query as one phrase, any letter case — on titles and content across every library you can reach. Not semantic. Optional `library_filter`, `namespace_filter`, `limit` (default 20, max 100). The web app's search box uses the same match. |
 
 ## Graph
 
@@ -80,8 +80,7 @@ New to Engram? Start with [Using Engram](/engram-usage); this page is for lookin
 
 > **Engram links similar objects on its own.** Beside the links you make, you will see
 > relationships with `relation: "auto_similar"` and `created_by: "system:auto_link"` — in our
-> test, between a runbook and the decision it mentioned, at weight 0.81. The Canvas draws them as
-> dashed lines.
+> test, between a runbook and the decision it mentioned, at weight 0.81.
 
 ## Access groups and sharing
 

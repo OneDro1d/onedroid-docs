@@ -26,8 +26,8 @@ Synapse, so there is nothing separate to register.
 ## Your first visit
 
 A new account starts with one library, **Personal** — *"Your private namespace library"*. The
-dashboard shows the selected library's name and description, and counts of its namespaces, API
-tokens and members.
+dashboard shows the selected library's name, description and counts. The **API Tokens** count is
+every token you have, in any library and including revoked ones — not just this library's.
 
 ![The dashboard for the Acme Research library, showing counts for namespaces, API tokens and members, and a Search card](/img/engram-web-app/dashboard.png)
 
@@ -95,8 +95,8 @@ From top to bottom:
   shared with.
 - **Sharing** — who else can reach this library and with what role. It is read-only here;
   change it on the [Sharing](#sharing) page.
-- **Objects**, newest first, each with its format (`markdown`) and source (`direct` for
-  something you added, or the tool it was imported from).
+- **Objects**, newest first, each tagged with its format (`markdown`) and source type
+  (`direct` for something you added). Imported objects also say where they came from.
 - **External links** — web pages Engram fetches into this namespace on a schedule.
 
 ### Adding an object
@@ -115,8 +115,10 @@ searchable straight away.
 
 ### Re-embed
 
-Re-creates embeddings for chunks that are missing them — typically after you add or change the
-library's embedding credential. It does not re-chunk or change any content.
+Asks Engram to embed the namespace again — the page confirms *"Re-embedding started for all
+objects"*. It does not re-chunk or change any content. The MCP tool
+[`engram_reembed`](/engram-tools#namespaces) is narrower: it only fills in chunks that have no
+embedding at all.
 
 ### Moving a namespace
 
@@ -140,19 +142,21 @@ its **failure count**, and whether the fetched object exists yet. A new link sta
 and becomes `active`. A link in `failed` or `disabled` shows the error and a **Re-enable**
 button; re-enabling resets the failure counter.
 
-**Deleting a link also deletes the object it created**, with its chunks, embeddings and history.
+**Deleting a link also deletes the object it created**, with its chunks and embeddings.
 Agents can register links with [`engram_register_link`](/engram-tools#objects), but there is no
 tool to remove one — the bin on the link card is the only way.
 
 ## Search
 
 The search box at the top of every page, or the Search card on the dashboard, finds objects
-whose **title or content contains your words**, across every library you can reach. Filter to
-one library with the dropdown; click a result to open its namespace.
+whose **title or content contains exactly what you typed** — the whole phrase, as written, in
+any letter case — across every library you can reach. `backup runbook` finds "Database backup
+runbook"; `runbook backup` does not. Filter to one library with the dropdown; click a result to
+open its namespace.
 
 ![The Search page returning one result for postgres, with its library and namespace](/img/engram-web-app/search.png)
 
-This is a word match, not semantic search. Search by meaning — with scores — is what
+This is a text match, not semantic search. Search by meaning — with scores — is what
 [`engram_search`](/engram-usage#searching-it-back) does for an agent.
 
 ## Canvas
@@ -161,9 +165,10 @@ A read-only map of your libraries, their namespaces and their objects.
 
 ![The Canvas showing the Acme Research library, its product-decisions namespace and three objects, with a legend](/img/engram-web-app/canvas.png)
 
-- **Solid lines** are links someone made with [`engram_link`](/engram-tools#graph). **Dashed
-  lines** are `auto:similar` — Engram draws those itself between objects with closely related
-  content.
+- **Lines** are links between objects, labelled with their relation. The legend marks
+  relations whose name starts with `auto:` as dashed and everything else as solid. Links you make
+  with [`engram_link`](/engram-tools#graph) are solid; so, in our test, were the similarity links
+  Engram made by itself, because it named them `auto_similar`.
 - Colours mark libraries that are **mine**, **shared with me** and **shared by me**.
 - A namespace shows up to 20 objects, then a *"+N more"* tile.
 - Click a namespace or object to open it. *Refresh* reloads the map.
@@ -186,8 +191,9 @@ There are two kinds, and the page recommends the first for good reason:
 - **Expiry**: 7, 30 (the default), 60 or 90 days. *Never expires* exists for headless agents;
   rotate such a token at least every 90 days. You can mint at most five never-expiring tokens
   in any 24 hours.
-- **The token is shown once in the banner** — but you can reveal it again later from the table
-  with the eye icon.
+- **The token is shown once in the banner.** The eye icon in the table can show it again,
+  for tokens stored that way; if it reports the token is not available, revoke it and mint a new
+  one.
 - **The bin revokes it.** A revoked token is refused on its very next request.
 - The **Full-Access Token** section offers *Create Admin Token* only while you have none.
 - **Connect to MCP Client** shows the two addresses to give your client:
@@ -207,8 +213,8 @@ Sharing works through **access groups**: named sets of people, by email. You gra
 2. Expand the group and **add members by email**.
 3. Under **Share this library**, pick the group and a role, and **Grant access**.
 
-- Only the library's **owner** sees the grant form. Anyone else sees *"Only the library owner
-  can change sharing."*
+- Only the library's **owner** sees the grant form. Someone with read or read-write access sees
+  *"Only the library owner can change sharing."*
 - The bin on a grant revokes it; the bin on a group deletes it and every grant it had.
 - Engram access groups are **not** Synapse groups. Membership of one grants nothing in the
   other.
@@ -231,11 +237,17 @@ checks the key against a model before you save. Keys are encrypted at rest.
 ![The Add Credential dialog with a name, OpenAI as provider, an API key and a test model](/img/engram-web-app/add-credential.png)
 
 **Embedding** assigns one credential, a model and its vector dimensions to the selected library.
+
+> ⚠️ **Pick a model that produces 1536-dimension vectors** — `text-embedding-3-small` does.
+> Engram stores embeddings as `vector(1536)` and runs meaning-based search only for 1536-wide
+> query vectors. A 768-dimension model, which is what the forms suggest for *Google AI*, leaves
+> that library's search keyword-only, with no error.
+
 Until you add a credential it says so:
 
 ![The Embedding page for Acme Research: no credentials yet, with a link to the Credentials page](/img/engram-web-app/embedding.png)
 
-After changing a library's embedding model, use **Re-embed** on each namespace.
+Changing a library's model does not change chunks that are already embedded.
 
 ## GitHub Sync
 

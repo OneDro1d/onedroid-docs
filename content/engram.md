@@ -29,7 +29,8 @@ end of a session.
 
 **Rich, not just a vector blob.** Hybrid retrieval — semantic and keyword together — over a
 typed object graph, so relationships like *supersedes* or *references* are explicit and
-traversable rather than inferred from similarity.
+traversable. Engram also links similar objects by itself, and marks those links as its own, so
+you can always tell a relationship somebody asserted from one it inferred.
 
 **Permissioned and yours.** Scoped by group and namespace, so context is shared deliberately
 rather than pooled by accident — and all of it in a database you own.

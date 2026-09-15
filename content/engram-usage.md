@@ -178,8 +178,9 @@ the platform's managed embedding. To use your own provider, see
 engram_update   object_id: "535a7c35-…"   content: "<the whole new content>"
 ```
 
-Each update is a new version. **An update whose content is unchanged returns `noop: true` and
-records nothing**, so it is safe to call blindly.
+Each update is a new version. **An update that changes nothing returns `noop: true` and changes
+nothing**, so it is safe to call blindly. (If the object had no history at all, Engram first saves
+its current content as a `baseline:` version, so there is always something to go back to.)
 
 The history, newest first:
 
@@ -246,7 +247,10 @@ namespace still has objects before concluding the knowledge is gone.
 
 **Search can silently fall back to keywords only.** If the query cannot be embedded, Engram
 drops the meaning engine and runs keywords alone. You get results and no warning. The tell is
-**every** result showing `vector_score: 0`; the cause is usually transient.
+**every** result showing `vector_score: 0`. Usually the cause is transient — but if it never
+changes, check the library's embedding model: meaning-based search needs 1536-dimension vectors,
+and a model producing any other size leaves it keyword-only for good (see
+[Embedding and credentials](/engram-web-app#embedding-and-credentials)).
 
 A **wrong namespace name does error** — `collection "…" not found` — so a typo fails loudly
 rather than returning nothing.

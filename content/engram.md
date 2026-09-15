@@ -66,8 +66,16 @@ Engram has its own endpoint:
 https://engram.onedroid.ai/mcp
 ```
 
-It is also available through Synapse as an upstream, which is how you get it governed and
-audited alongside every other tool in the hub. One account covers both — free for
-individuals and small teams.
+It is also available through Synapse as a connection, which is how you get it governed and
+audited alongside every other tool in the hub. One account covers both — free for individuals
+and small teams.
 
 In the official MCP registry it is published as `ai.onedroid/engram`.
+
+## Where to go next
+
+- **[Using Engram](/engram-usage)** — mint a token, connect a client, write, search, read the
+  scores, share with a team, and the known issues.
+- **[The Engram web app](/engram-web-app)** — every screen, with screenshots: libraries,
+  namespaces, objects, web links, tokens, sharing, embedding, and bringing your own database.
+- **[Engram tool reference](/engram-tools)** — all 45 `engram_*` tools and how they behave.

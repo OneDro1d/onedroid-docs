@@ -1,0 +1,40 @@
+{
+  "$comment": "Read by the agent-notepad push gate (PreToolUse Bash). Paths are repo-relative globs matched against the files in the push range @{u}..HEAD. THIS FILE IS THIS REPO'S POLICY — it is deliberately NOT in any notepad's repos.manifest.json, because the same repo can be driven by several notepads or none, and a repo must have exactly one definition of done. Written 2026-09-15. Every `requires` path below was verified to exist first, because a rule naming a missing file blocks every push on day one.",
+  "$scope": "AGENT pushes only. A human running `git push` in a terminal is untouched. A passing gate proves a file MOVED, never that it is correct — one whitespace character passes. Never read green as 'the docs are current'.",
+  "$rejected": {
+    "content/** requires dist/**": "PROPOSED AND REJECTED 2026-09-15, after the operator approved it on a wrong description from me. `dist/` is GITIGNORED (.gitignore:2) and has never been tracked (`git ls-files dist` and `git log -- dist` are both empty), so it can never appear in a push range: the rule would block every content push, permanently and unsatisfiably. Nothing is left unguarded by dropping it — `npm run check` catches a stale local dist/ at build time, and Vercel rebuilds dist/ from content/ on every deploy, so a stale dist/ cannot ship.",
+    "new content/*.md requires content/index.md": "Offered as an option and not taken. Left out deliberately."
+  },
+  "rules": [
+    {
+      "$why": "build.mjs IS the contract — it decides which frontmatter is mandatory (title + description, or the build throws), how the sidebar is grouped and sorted, and that nav, llms.txt, sitemap.xml and robots.txt are generated rather than hand-maintained. README.md:12-44 and AGENTS.md both state those rules in prose. Change the generator without touching either and two files are confidently wrong — the worst outcome in a repo whose readers are increasingly agents that cannot tell.",
+      "when": "build.mjs",
+      "requires": ["AGENTS.md", "README.md"],
+      "level": "block"
+    },
+    {
+      "$why": "middleware.js carries the promise README.md:46-51 makes in words: an agent gets the markdown SOURCE FILE, byte for byte, at the canonical URL. This repo has already been burned once on exactly this seam — a vercel.json rewrite never fired, because Vercel evaluates rewrites only after the filesystem check, and ClaudeBot silently received HTML (middleware.js:3-7). A change here that the README does not follow re-opens a failure nobody can see from the outside.",
+      "when": "middleware.js",
+      "requires": ["README.md"],
+      "level": "block"
+    },
+    {
+      "$why": "This is the two-homes case, not merely an undocumented one. context7.json carries a SECOND COPY of the endpoint rules that content/endpoints.md and content/tokens.md state: /agent/mcp takes no hub slug, /hub/<slug>/mcp is browser OAuth only, a mismatch returns ERR_SCOPE_UNAVAILABLE, and a token inherits the user's current role rather than freezing it. The repo's own house rule is 'no second copy' — this file is the exception that already exists, so it has to move with the pages or it becomes the confidently wrong one. Blurring the two endpoints is, per AGENTS.md, the most common wiring mistake we see.",
+      "when": "content/endpoints.md",
+      "requires": ["context7.json"],
+      "level": "block"
+    },
+    {
+      "$why": "Same second copy, the tokens half: context7.json's last rule states the role-inheritance behaviour that content/tokens.md documents.",
+      "when": "content/tokens.md",
+      "requires": ["context7.json"],
+      "level": "block"
+    },
+    {
+      "$why": "WARN, not block: vercel.json sets the build command, cleanUrls, the security headers and the text/markdown + CORS headers that make the agent path work at all. README.md:14 describes it in one line. Worth a nudge — but a header tweak is not the kind of change that leaves a reader misinformed, so it should not stop a push.",
+      "when": "vercel.json",
+      "requires": ["README.md"],
+      "level": "warn"
+    }
+  ]
+}

@@ -14,6 +14,9 @@ is right and the site is stale.
 - `build.mjs` — markdown → `dist/`. One dependency (`marked`).
 - `middleware.js` — serves the markdown source to AI agents at the canonical URL.
 - `tools/`, `dist/`, `node_modules/` — not content. Never edit `dist/` by hand; it is generated.
+- `.claude/` — the agent inner loop: the context store (structure and data-authority, not house
+  rules — those stay here), the subagents, and two gates. [CLAUDE.md](CLAUDE.md) is the entry
+  point. Read `.claude/context/SERVICE-MAP.md` instead of re-deriving how the build works.
 
 ## Making a change
 
@@ -22,6 +25,11 @@ npm install
 npm run build     # regenerate dist/
 npm run check     # exits 1 if dist/ is stale — run before committing
 ```
+
+`dist/` is gitignored and is never committed: Vercel rebuilds it from `content/` on every
+deploy, so a stale `dist/` cannot ship. Run `check` anyway — it is the only thing that proves
+your local preview matches what Vercel will build — but treat it as a preview check, not a
+publishing gate.
 
 Every page needs `title` and `description` in frontmatter. The build **fails** without them,
 deliberately: a page an agent cannot identify is a page that will not be retrieved.

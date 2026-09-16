@@ -71,9 +71,15 @@ rather than an outage —
 
 ## The connections count stays at zero
 
-A fresh hub has none until somebody adds them, and adding one is an admin gesture — on a hub
-you created, that is you. Enabling a connection is only half of it; you then supply your own
-credential. See [Connections and credentials](/connections).
+Expected on a fresh hub. Upstream services are enabled under **Connect → Connections**, and
+adding one is an admin gesture — so the question is which hub this is.
+
+**If you created the hub, you administer it** and this is simply the next step of your own
+setup — there is nobody to ask. **If you were invited into someone else's hub**, it is not
+yours to fix: the token is fine, the hub has no upstreams, and the owner has to enable them.
+
+Enabling a connection is only half of it; each member then supplies their own credential.
+See [Connections and credentials](/connections).
 
 ## Clicking **Connect** does nothing at all
 

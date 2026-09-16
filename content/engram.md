@@ -29,7 +29,8 @@ end of a session.
 
 **Rich, not just a vector blob.** Hybrid retrieval — semantic and keyword together — over a
 typed object graph, so relationships like *supersedes* or *references* are explicit and
-traversable rather than inferred from similarity.
+traversable. Engram also links similar objects by itself, and marks those links as its own, so
+you can always tell a relationship somebody asserted from one it inferred.
 
 **Permissioned and yours.** Scoped by group and namespace, so context is shared deliberately
 rather than pooled by accident — and all of it in a database you own.
@@ -66,8 +67,16 @@ Engram has its own endpoint:
 https://engram.onedroid.ai/mcp
 ```
 
-It is also available through Synapse as an upstream, which is how you get it governed and
-audited alongside every other tool in the hub. One account covers both — free for
-individuals and small teams.
+It is also available through Synapse as a connection, which is how you get it governed and
+audited alongside every other tool in the hub. One account covers both — free for individuals
+and small teams.
 
 In the official MCP registry it is published as `ai.onedroid/engram`.
+
+## Where to go next
+
+- **[Using Engram](/engram-usage)** — mint a token, connect a client, write, search, read the
+  scores, share with a team, and the known issues.
+- **[The Engram web app](/engram-web-app)** — every screen, with screenshots: libraries,
+  namespaces, objects, web links, tokens, sharing, embedding, and bringing your own database.
+- **[Engram tool reference](/engram-tools)** — all 45 `engram_*` tools and how they behave.

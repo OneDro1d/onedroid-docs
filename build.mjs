@@ -8,6 +8,8 @@
 //      canonical URL. An agent reading these docs gets the original, not a reconstruction.
 //   2. One dependency (marked). Every package here is a thing somebody has to patch.
 //   3. No client-side JavaScript. Docs that need JS to render are docs an agent cannot read.
+//   4. Screenshots live in content/img/<page>/ and are copied byte for byte. PNG only, and
+//      every image reference must resolve and carry alt text — or the build fails.
 //
 // Usage: node build.mjs          build into dist/
 //        node build.mjs --check  exit 1 if the build output would differ (CI gate)
@@ -70,6 +72,38 @@ const pages = walk(CONTENT)
     };
   })
   .sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));
+
+// ---------------------------------------------------------------- images
+
+// PNG only. A docs repo that will serve any file type dropped into content/ is one careless
+// upload away from publishing something it should not, and this repo is public.
+const IMG_DIR = join(CONTENT, "img");
+
+function walkImages(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) out.push(...walkImages(full));
+    else if (entry.endsWith(".png")) out.push(full);
+    else throw new Error(`${relative(CONTENT, full)}: only .png files belong under content/img/`);
+  }
+  return out;
+}
+
+const images = existsSync(IMG_DIR) ? walkImages(IMG_DIR) : [];
+const imagePaths = new Set(images.map((f) => "/" + relative(CONTENT, f).replace(/\\/g, "/")));
+
+// Every image reference must resolve, and must say what it shows. A broken image is the
+// same silent failure as a dead anchor — the build succeeds and the reader gets nothing —
+// and alt text is the only part of a screenshot an agent or a screen reader can read.
+for (const p of pages) {
+  for (const m of p.body.matchAll(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g)) {
+    const [, alt, src] = m;
+    if (!src.startsWith("/img/")) throw new Error(`${p.rel}: image ${src} must live under /img/`);
+    if (!imagePaths.has(src)) throw new Error(`${p.rel}: image ${src} does not exist under content/`);
+    if (!alt.trim()) throw new Error(`${p.rel}: image ${src} needs alt text`);
+  }
+}
 
 // ---------------------------------------------------------------- rendering
 
@@ -150,6 +184,7 @@ table{border-collapse:collapse;width:100%;margin:1.5em 0;font-size:14.5px;displa
 th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
 th{background:var(--code);font-weight:600}
 hr{border:0;border-top:1px solid var(--line);margin:2.5em 0}
+main img{display:block;max-width:100%;height:auto;margin:1.5em 0;border:1px solid var(--line);border-radius:8px}
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:14px}
 footer .wrap{display:block;padding-top:24px;padding-bottom:48px}
 footer p{margin:0 0 .7em;max-width:70ch}
@@ -206,6 +241,8 @@ for (const p of pages) {
   files.set(p.slug ? `${p.slug}.md` : "index.md", p.raw);
 }
 
+for (const f of images) files.set(relative(CONTENT, f).replace(/\\/g, "/"), readFileSync(f));
+
 files.set(
   "llms.txt",
   `# OneDroid Docs\n\n` +
@@ -244,7 +281,9 @@ if (CHECK) {
   let stale = [];
   for (const [rel, body] of files) {
     const path = join(DIST, rel);
-    if (!existsSync(path) || readFileSync(path, "utf8") !== body) stale.push(rel);
+    const same = existsSync(path) &&
+      (Buffer.isBuffer(body) ? readFileSync(path).equals(body) : readFileSync(path, "utf8") === body);
+    if (!same) stale.push(rel);
   }
   if (stale.length) {
     console.error(`STALE (${stale.length}): ${stale.slice(0, 8).join(", ")}`);

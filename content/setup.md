@@ -10,13 +10,17 @@ Onboarding is two screens. Only the first carries any weight.
 
 ## 1. Sign in
 
-Go to [synapse.onedroid.ai](https://synapse.onedroid.ai) and click **Sign in**. Three
-options: Google, Microsoft, or an email address. First time here, use **Sign up** instead.
+Go to [synapse.onedroid.ai](https://synapse.onedroid.ai) and click **Sign in**. Two ways in:
 
-> **Use the same method every time.** Sign-in is handled by Clerk, and signing in with
-> Google when you originally signed up with Microsoft creates a **separate account** — even
-> with the identical email address. If you end up signed in with no hub, or the wrong one,
-> this is almost always why.
+- **Continue with Google**
+- **An email address** — you get a one-time code, or a sign-in link, by email
+
+> **There is no Microsoft sign-in.** The button was offered briefly and never worked for
+> anyone; it has been removed. If you tried it and failed, that was the product, not you.
+
+> **Use the same method every time.** Sign-in is handled by Clerk, and Google and email
+> sign-ins on the *same address* are still two different accounts. If you end up signed in
+> with no hub, or the wrong one, this is almost always why.
 
 ## 2. Choose where your data is stored
 
@@ -70,8 +74,8 @@ is expected, not a failure. The left nav splits four ways:
 - **Admin** — tool toggles, sharing, invites, activity logs, reporting
 
 > **A fresh hub has zero connections. That is expected, not a failure.** Upstream services
-> are enabled under **Connect → Connections**, and only an admin can enable them — so which
-> situation you are in decides whether this is yours to do.
+> are enabled under **Connect → Connections**, and adding them is an **admin** gesture — so
+> which situation you are in decides whether this is yours to do.
 >
 > - **You created this hub.** Then you administer it, and enabling upstreams is the next
 >   step of your own setup. Nothing to wait for.
@@ -79,4 +83,6 @@ is expected, not a failure. The left nav splits four ways:
 >   a perfectly valid token, see no tools, and have every reason to blame the token. Ask
 >   whoever owns the hub.
 >
-> Once a connection is enabled, each member supplies their own token or OAuth login for it.
+> Enabling a connection is only half the job: each member then supplies their own credential
+> for it. See [Connections and credentials](/connections), which is where most first-time
+> setups actually stall.

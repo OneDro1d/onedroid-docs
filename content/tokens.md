@@ -3,7 +3,7 @@ title: Personal access tokens
 nav: Tokens
 description: What a token is, what it isn't, and how it behaves when your role changes.
 section: Reference
-order: 5
+order: 11
 ---
 
 ## Scope

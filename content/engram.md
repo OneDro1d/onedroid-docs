@@ -3,7 +3,7 @@ title: Engram — portable agent memory
 nav: What Engram is
 description: Versioned, permissioned context in a Postgres you own, reachable by any MCP client behind any model.
 section: Engram
-order: 7
+order: 20
 ---
 
 Models are interchangeable. Your context is not. Engram is where an organisation's durable
@@ -36,9 +36,24 @@ rather than pooled by accident — and all of it in a database you own.
 
 ## Bring your own database
 
-Point Engram at your own Postgres and that is where everything lives: documents, chunks,
-embeddings, history, permissions. Read it with SQL whenever you like. Back it up with the
-tools you already trust. Leave, and the data simply stays where it always was — with you.
+Point Engram at your own Postgres and **your content lives there**: namespaces, objects,
+chunks, embeddings and their history are rows in your database. Read them with SQL whenever
+you like. Back them up with the tools you already trust. Leave, and the content stays where
+it always was — with you.
+
+Requirements: Postgres with the **pgvector** extension, which Engram enables for you at
+registration along with `uuid-ossp`. Embeddings are stored as `vector(1536)`. Postgres 16 is
+what we develop and test against.
+
+> **One honest exception.** The **library registry** — which libraries exist and who belongs
+> to them — is read from the OneDroid platform database, not from yours. Your knowledge is
+> sovereign; the membership index that points at it is not. If a claim of total sovereignty
+> matters to your compliance case, this is the line, and we would rather you heard it here
+> than discovered it in an audit.
+
+> **Schema migrations run when you register**, not continuously. A database registered a
+> while ago does not automatically receive later schema changes — re-registering is
+> idempotent and brings it current.
 
 The same model serves a single developer's notebook and a regulated enterprise knowledge
 base.

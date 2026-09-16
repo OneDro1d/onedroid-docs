@@ -20,14 +20,28 @@ survives the session, is portable between agents, permissioned, and yours to kee
 
 ## Where to start
 
-- **Setting up for the first time?** [Set up your hub](/setup) — sign in, choose where your
-  data lives, create a hub.
-- **Just want it connected?** [Connect Claude Code](/quickstart) — one command, one bearer
-  token.
-- **Wiring something that isn't Claude Code?** [Endpoints and authentication](/endpoints)
-  explains the three routes and which one your client should use.
+Everyone starts by [setting up a hub](/setup) — sign in, choose where your data lives, give
+it a name. After that the path forks by how you work.
+
+**If you do not live in a terminal**, connect your assistant through the browser:
+[Claude Desktop or claude.ai](/claude-desktop). Nothing to install, no token to look after.
+
+**If you write code**, use the token route: [Connect Claude Code](/quickstart) — one command
+and one bearer token, and the same path works for CI and any HTTP MCP client.
+
+**Both paths then converge** on [Connections and credentials](/connections). This is the step
+that catches almost everyone, because enabling a service on your hub and giving it *your*
+login are two different actions and only the second one lets you call anything. If you are
+stuck right now, start there.
+
+Then:
+
+- **Want memory that outlives the session?** [Using Engram](/engram-usage) — write your first
+  object and search it back.
+- **Wiring something else?** [Endpoints and authentication](/endpoints) explains the two
+  routes and which one your client needs.
 - **Something broken?** [Troubleshooting](/troubleshooting) covers the failures people
-  actually hit.
+  actually hit, with the one probe that tells them apart.
 
 ## These docs are open source
 

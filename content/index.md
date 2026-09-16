@@ -36,10 +36,16 @@ stuck right now, start there.
 
 Then:
 
+- **Running a hub for a team?** [Members, groups & sharing](/hub-administration) — invites,
+  roles, and how a role actually resolves.
+- **Want to narrow or audit what agents can do?** [Tools and governance](/tools-and-governance)
+  — see every tool, turn one off, set hub features, read the log.
 - **Want memory that outlives the session?** [Using Engram](/engram-usage) — write your first
   object and search it back.
 - **Wiring something else?** [Endpoints and authentication](/endpoints) explains the two
   routes and which one your client needs.
+- **Driving Synapse from an agent?** [The MCP tools your hub exposes](/mcp-tools) documents
+  the baseline tool set.
 - **Something broken?** [Troubleshooting](/troubleshooting) covers the failures people
   actually hit, with the one probe that tells them apart.
 

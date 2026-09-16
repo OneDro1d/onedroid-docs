@@ -28,6 +28,15 @@ Developers wiring Claude Code, CI, or a script want [the token route](/quickstar
 **Connect**, and it prints the exact URL for your hub along with per-client instructions.
 Copy it from there — that is the shortest path and it cannot be typed wrong.
 
+The page prints two URLs — the OAuth hub URL for browser clients (with your slug in the
+path) and the token URL for headless agents (`/agent/mcp`, no slug) — with per-client steps
+for Claude.ai, Cursor, VS Code and ChatGPT.
+
+The page also carries the **OpenAPI spec URL** (`/openapi.yaml`) for clients like ChatGPT
+that import actions from a spec rather than speaking MCP, and a **Generate credentials**
+control with presets for Claude, ChatGPT and a generic client — for the clients that ask
+for a Client ID and Secret by hand.
+
 The shape is:
 
 ```

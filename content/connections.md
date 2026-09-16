@@ -16,6 +16,8 @@ while failing the other.
 
 ## The two switches on every row
 
+![The Connections page: a header explaining the two switches, an MCP Servers section for what is on the hub, and a collapsed Catalogue of connections not yet added](/img/connections/connections-page.png)
+
 The Connections page shows one row per connection, with two independent states:
 
 | Switch | Who controls it | What it means |
@@ -51,10 +53,17 @@ kind and the count — `ENGRAM (PAT) · 1 alias`, `SLACK (OAUTH) · 1 alias` —
 own name on the row beneath.
 
 **Most importantly, the page is in two halves.** The top is **MCP Servers** — what is
-actually on your hub. Below it sits a collapsed **Catalogue — not on this hub**, which is
-everything available that you have *not* added. If you are staring at more copies of a
-service than makes sense, check which half you are in: the catalogue is a menu, not your
-hub. Add one to your hub with **Add remote MCP**.
+actually on your hub. Below it sits a collapsed **Catalogue** of connections not on this hub
+(labelled `CATALOGUE (n)`), which is everything available that you have *not* added. If you
+are staring at more copies of a service than makes sense, check which half you are in: the
+catalogue is a menu, not your hub. Add one to your hub with **Add remote MCP** or, for a
+catalogue entry, its **Add … to this hub** button.
+
+> **Hub admins see a third section, `Other connections in your organisation`.** These are
+> connections registered for your organisation but mounted on no hub — one entry per
+> connection URL and auth type. It exists so an orphaned connection (bound to no hub, and so
+> invisible on every hub page) can still be found and mounted. It is collapsed by default and
+> offers **Mount** only, never Connect: you mount first, then supply your credential.
 
 > **If you are not sure which alias is yours, ask the person who created the hub rather
 > than guessing.** Picking the wrong one is not dangerous — you simply cannot credential a
@@ -78,6 +87,26 @@ and verified in one step.
 
 If you clicked Connect expecting a popup and saw nothing move, look for the field in the row
 you just expanded. That is the whole flow.
+
+### Adding a connection that is not in the catalogue
+
+**Add remote MCP** (top of the page, admin only) mounts any remote MCP server by URL. You
+give it a namespace (lowercase, hyphenated — its tools are prefixed with it, so `slack`
+becomes `slack__send_message`), a display name, a transport (**HTTP (modern)**, **SSE
+(legacy)**, or **stdio (local)**), the server URL, and an auth type (**API token**, where
+each user supplies their own, or **OAuth (auto-discovery)**). Synapse probes the URL to find
+where the server actually speaks MCP before saving, so a URL that speaks nothing is refused
+rather than saved broken.
+
+![The Add Remote MCP Server dialog: namespace, display name, transport-type toggle, server URL, and auth-type toggle](/img/connections/add-remote-mcp.png)
+
+**Import an API** (beside it, admin only) turns an OpenAPI spec into a hub connection: paste
+a spec URL or the spec itself, give it an alias, and pick an auth scheme (**None**, **Bearer
+token**, or **API key**). The spec is fetched through an SSRF-safe client — https only, and
+only the resolved host is allowed through. The actual key or token is saved afterwards
+through the connection's normal credential flow, never in this dialog.
+
+![The Import an API dialog: an OpenAPI spec URL field, an alias, a display name, and an auth-scheme toggle set to None](/img/connections/import-api.png)
 
 Helpfully, these rows carry a **Get your token here** link straight to the service that
 issues it, so you do not have to go hunting for where a token comes from.
@@ -141,6 +170,8 @@ workspace**, which opens a form with four required fields:
 | API Token | from [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens) |
 
 The email must be the account the API token belongs to. You can add several workspaces.
+
+![The Add Atlassian workspace form: Workspace Name, Site URL, Email and API Token fields](/img/connections/add-atlassian.png)
 
 ### Microsoft 365 — not available on synapse.onedroid.ai yet
 

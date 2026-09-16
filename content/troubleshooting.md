@@ -58,6 +58,25 @@ Check the name inside the quotes before anything else. If it is not the row you
 credentialed, you have two aliases of the same service and connected the other one — see
 [Connections and credentials](/connections#why-there-are-several-copies-of-the-same-service).
 
+## A credential row says "server unreachable" but the server is fine
+
+Paste a token that the upstream rejects and the row can show two things that seem to
+contradict: **YOUR CREDENTIAL · SERVER UNREACHABLE**, and, right below it, the connection
+still marked **Connected**. Only the red line underneath is the whole truth:
+
+```
+verification failed: connection manager verify 'engram': connect to 'engram'
+for user: initialize: upstream returned HTTP 401
+```
+
+![A hub's Engram row after a bad token: a "server unreachable" credential badge and a "Connected" line together, with a red HTTP 401 verification-failed message beneath](/img/troubleshooting/bad-token-badge.png)
+
+**HTTP 401 means the server answered and rejected the token — it was reached, not
+unreachable.** The badge is misleading here; the error line is not. Read the error line and
+fix the *token* (Reveal it at source, paste it again), rather than debugging your network.
+This is the same lesson as the section below and the [auth_status](/connections#reading-the-status-an-agent-sees)
+table: judge the connection by the specific error, never by the one-word badge.
+
 ## A status says `connected: true` but the call still fails
 
 Both are right; they are about different things. `connected` from

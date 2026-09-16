@@ -56,6 +56,12 @@ a name and click **Create hub**.
 
 ![The hub-name step: a Hub Name field reading "Acme Docs" and a slug field reading "acme-docs"](/img/setup/name-your-hub.png)
 
+**The hub you create is yours, and you administer it.** Nobody provisions it for you and
+there is nobody to ask: sign-up, hub, tokens and upstream connections are all self-service.
+The **Admin** section in the left nav is not decorative — it is yours. The one thing that
+changes this is being *invited* into a hub somebody else created; then you hold whatever
+role they granted you. See [step 4](#4-find-your-way-around).
+
 > **Your slug will not be what you typed.** Synapse appends a short unique suffix, so
 > `team-dev-1` becomes something like `team-dev-1-dj8p87`. Take the real slug from the
 > browser URL or the Hub Details panel before you bookmark or share a link.
@@ -77,8 +83,16 @@ four ways:
 - **Manage** — members, groups, API tokens, database
 - **Admin** — tool toggles, sharing, invites, activity logs, reporting
 
-> A fresh hub has no connections until somebody adds them, and adding them is an **admin**
-> gesture. On a hub you created, that is you — there is nobody to wait for. Enabling a
-> connection is only half the job: each member then supplies their own credential for it.
-> See [Connections and credentials](/connections), which is where most first-time setups
-> actually stall.
+> **A fresh hub has zero connections. That is expected, not a failure.** Upstream services
+> are enabled under **Connect → Connections**, and adding them is an **admin** gesture — so
+> which situation you are in decides whether this is yours to do.
+>
+> - **You created this hub.** Then you administer it, and enabling upstreams is the next
+>   step of your own setup. Nothing to wait for.
+> - **You were invited into someone else's hub.** Then it is not yours to fix. You will hold
+>   a perfectly valid token, see no tools, and have every reason to blame the token. Ask
+>   whoever owns the hub.
+>
+> Enabling a connection is only half the job: each member then supplies their own credential
+> for it. See [Connections and credentials](/connections), which is where most first-time
+> setups actually stall.

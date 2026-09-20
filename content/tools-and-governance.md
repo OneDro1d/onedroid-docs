@@ -14,9 +14,9 @@ with it.
 
 **Connect → Tools** lists every tool available on the hub, grouped by the service it comes
 from, with a count per service and a running total. It is the authoritative answer to *what
-can my agent call here* — search it by name, description or namespace.
-
-![The Tools page: a total tool count, per-service chips, a search box, and a list of tools each tagged with its source](/img/tools-and-governance/tools.png)
+can my agent call here* — search it by name, description or namespace. The page shows a
+total tool count, one chip per service, a search box, and the list of tools, each tagged
+with its source.
 
 The list includes **built-in** tools (the baseline `synapse__*`, `router_*`, `engram_*`
 and first-party Atlassian / Google tools that every hub has) plus one block per connected

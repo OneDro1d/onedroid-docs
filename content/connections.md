@@ -40,11 +40,11 @@ the single most common question about this screen, and the list is not broken.
 
 Each row is an **alias**: a named instance of a catalogue definition. One definition can
 back many aliases. The canonical case is one Atlassian definition added twice as
-`atlassian-pww` and `atlassian-eso` — same software, two separate sites, two separate
+`atlassian-sales` and `atlassian-support` — same software, two separate sites, two separate
 credentials, independently switchable.
 
 So the name is the only thing that tells them apart, and **aliases are named by whoever
-created them**. `engram`, `engram-prod` and `engram-work-pww` are three aliases in front of
+created them**. `engram`, `engram-prod` and `engram-work` are three aliases in front of
 the same Engram service, and your credential for one is a different stored row from your
 credential for another. Connecting `engram` does not connect `engram-prod`.
 

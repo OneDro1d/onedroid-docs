@@ -42,6 +42,9 @@ Then:
   — see every tool, turn one off, set hub features, read the log.
 - **Want memory that outlives the session?** [Using Engram](/engram-usage) — write your first
   object and search it back.
+- **Testing a system end to end, with the builder held to a real holdout?** [What Argus
+  is](/argus) — end-to-end tests run against your real, deployed system and judged from its
+  own logs, with a builder that never sees what it's being checked against.
 - **Wiring something else?** [Endpoints and authentication](/endpoints) explains the two
   routes and which one your client needs.
 - **Driving Synapse from an agent?** [The MCP tools your hub exposes](/mcp-tools) documents

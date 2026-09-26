@@ -71,11 +71,34 @@ Paste this into the tester's first message and fill in the angle brackets:
 
 ## Apps that move money
 
-If your app handles money, mark it `money_handling: true` in its Argus config. Argus then runs
-**only read checks** against it (plain HTTP GETs, and never on a path naming an order, quote,
-swap, rebalance or claim). It enforces this three times: when a check is written, when the
-config is validated, and when the check runs. Decide in the tester's brief which account and
-which limits the tests may use.
+Argus does not decide what your tests may do. The tester and the app's owner do, and the app's
+Argus config records it. Argus enforces what the config declares.
+
+For an app that moves money, the config has an optional safety switch. Set
+`money_handling: true` and Argus refuses any write the config does not list: plain HTTP GETs
+still run, and a check on a path naming an order, quote, swap, rebalance or claim is refused.
+To allow writes, list each one under `money_writes.allow`, with the limits you choose:
+
+```yaml
+money_handling: true
+money_writes:
+  allow:
+    - method: POST
+      path: /api/v1/trading/quote
+      spends: false
+    - method: POST
+      path: /api/v1/trading/order
+      spends: true
+      amount_field: source_amount   # the request field that carries the amount
+      max_amount: 25                # per request
+      max_per_run: 4                # requests per run
+```
+
+Argus checks this when a check is written, when the config is validated, and when the check runs.
+Leave `money_handling` out and none of it applies.
+
+> `money_writes` needs an execution plane newer than v0.3.37. Until that release, an app with
+> `money_handling: true` gets read checks only.
 
 ## Related
 

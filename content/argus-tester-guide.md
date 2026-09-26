@@ -39,6 +39,100 @@ argus cloud-executor-status --control-plane "$ARGUS_CP_URL" --instance-id <insta
 `"registered": true` alone is not enough — an instance can register once and then be refused on
 every later poll. Want both to be true before you trust anything else about the instance.
 
+### Installing into a Kubernetes cluster
+
+You do not need Docker for this. The execution plane runs as a pod in its own namespace, in
+any cluster that can reach your system, and it talks to the control plane **outbound only**
+over HTTPS. Nothing has to reach into your cluster. It does not have to run next to your
+system either: an execution plane in one cluster can test an app hosted somewhere else, as
+long as it can reach that app's endpoints.
+
+You need `kubectl` access to create a namespace in that cluster, and the `argus` CLI.
+
+**1. Check the cluster first.** This creates nothing, and it names the fix for anything missing:
+
+```bash
+argus preflight --tier <tier> --kube-context <your-kube-context> --control-plane "$ARGUS_CP_URL"
+```
+
+The tier picks the storage class for the results volume and how the observability services
+are exposed:
+
+| Tier | Storage class it uses |
+|---|---|
+| `k3d`, `kind`, `minikube` | `argus-rwx`, a shared class you install first (preflight says how) |
+| `aks` | `azurefile-csi` |
+| `managed` (any other cluster) | `local-path`, unless you pass `--storage-class` |
+
+On any other managed cluster, pass `--storage-class <a class your cluster has>` in step 3.
+`kubectl get storageclass` lists them. ⚠️ Passing `--storage-class` on its own requests
+ReadWriteMany. Most cloud block-storage classes only support ReadWriteOnce, so with one of
+those also pass `--results-access-mode ReadWriteOnce`, or the volume never binds. ReadWriteOnce
+limits the execution plane to one replica. That works, but the pod doesn't survive losing its
+node.
+
+Always pass a tier. An empty tier, or a class your cluster doesn't have, leaves the volume
+unbound, and the pod waits for it forever.
+
+**2. Mint the enrollment token.** From here to step 5 you have 15 minutes before the token
+expires. If it does, nothing breaks: mint a new one and start again from here.
+
+```bash
+argus cloud-enroll --control-plane "$ARGUS_CP_URL" --instance-id <instance-id> --token-dir <a-private-dir>
+```
+
+The instance id becomes the namespace `argus-inst-<instance-id>`, so it must be a valid
+Kubernetes name. `<system>-<tier>` works well.
+
+**3. Render the manifests.** Run this as a small script, so the token goes from its file into
+the environment and never appears on a command line:
+
+```bash
+#!/bin/sh
+set -eu
+export ARGUS_ENROLLMENT_TOKEN="$(cat <a-private-dir>/<instance-id>.enrollment)"
+export ARGUS_RUNNER_TOKEN="$(python3 -c 'import secrets;print(secrets.token_hex(32))')"
+export ARGUS_AUTHOR_TOKEN="$(python3 -c 'import secrets;print(secrets.token_hex(32))')"
+export ARGUS_CP_URL=<your-argus-control-plane-url>
+export ARGUS_WORKSPACE_ID=<your-workspace-id>
+
+argus render-k8s --config <your-kit>/argus-config.yaml \
+  --instance-id <instance-id> --sut-namespace <your-system-namespace> \
+  --image <execution-plane-image> --tier <tier> --kube-context <your-kube-context> \
+  --replicas 1 --out <out-dir>
+```
+
+On a `managed` cluster, add `--storage-class <class>`, plus `--results-access-mode ReadWriteOnce`
+if that class needs it. `--kube-context` is recorded on the instance, so later updates target the
+right cluster.
+
+The two generated tokens are the execution plane's own local credentials. They go only into
+the Secret it renders. Your control plane's operator gives you the execution-plane image.
+
+**4. Create the objects. Use `create`, never `apply`:**
+
+```bash
+kubectl --context <your-kube-context> create -f <out-dir>/executor.yaml -f <out-dir>/obs.yaml
+```
+
+`executor.yaml` contains a Secret. `kubectl apply` copies a Secret's data into an annotation on
+the object, so anyone who can read the object sees the value a second time.
+
+**5. Confirm it enrolled:**
+
+```bash
+argus cloud-executor-status --control-plane "$ARGUS_CP_URL" --instance-id <instance-id>
+```
+
+You want `"registered": true` **and** `"poll_accepted": true`. Once both are true, load your
+scenarios and run them once by hand before you put them on a schedule.
+
+**Updating.** A person always decides when an execution plane updates. On Kubernetes you press
+**Update** on the Environments page, and the execution plane changes its own Deployment's image.
+It can change that Deployment and nothing else in the namespace. Before it changes anything, it
+checks that the cluster can pull the new image. The copy-paste update command on that page is
+for compose (Docker) installs only.
+
 ## Writing a scenario
 
 A scenario is one Markdown file, one contract, in a fixed shape:

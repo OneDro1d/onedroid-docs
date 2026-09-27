@@ -26,10 +26,54 @@ enforced twice, not once — so do not go looking for a workaround to either:
 If you find yourself asking "what does this scenario actually check" — stop. That question
 belongs to the tester. Yours is "what did my system actually do, and does that look healthy."
 
+## Two ways to reach Argus: which one is yours?
+
+- **Through the control plane (the usual case).** Your app's tester runs the execution plane and
+  gives you a **runner id** (`rid_…`). You connect your agent session to the control plane's MCP
+  endpoint with a **builder token** and call the `runner__*` tools below. You need no Argus config
+  and no Argus install of your own. Use this section.
+- **Self-hosted, with a local router.** Argus runs next to your system and you call it with the
+  `argus` CLI and your own `argus-config.yaml`. Skip to [What you may call](#what-you-may-call).
+
+If you were given a runner id, you are on the first path.
+
+### Connect your session
+
+1. Your operator generates a **builder token** in the Argus app (**Tokens** → *Generate builder
+   token*, in your app's workspace) and puts it in a file in your environment. Never paste a token
+   into a chat.
+2. Add the control plane's MCP endpoint to your session with that token as a bearer header.
+3. Check it: your tool list should show **only** `runner__*` tools. If it shows `author_*` tools,
+   the token is the wrong kind: stop and say so.
+
+⛔ **Never use the Authenticate / sign-in button your MCP client offers for Argus.** A browser
+sign-in can grant a broader scope than a builder may hold. If the tools don't load, the fix is
+the token, not a sign-in.
+
+### The tools
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `runner__run` | `runner_id`; optional `scenario_ref`, `tag`, `layer` | Starts a run on the paired execution plane and returns `run_id` straight away. The run keeps going after the call returns. |
+| `runner__get_report` | `runner_id`; optional `run_id` (default: the last run) | The report for one run: what your system did, never what was expected. |
+| `runner__list_alerts` | optional `instance_id`, `after_id`, `limit` | Scheduled checks that changed state: went red, produced no result, or recovered. Poll with `after_id` set to the previous call's `next_after_id`. No `runner_id`. |
+| `runner__validate_config` | `runner_id` | Checks the execution plane's configuration against its checks. |
+| `runner__get_dashboard_url` | `runner_id`; optional `correlation_id` | Links into the dashboard, deep-linked to one request if you give its correlation id. |
+
+`get-sagas` and `tail-logs` are **not** available on this path. They exist only on a local router.
+
+### A fix loop on this path
+
+1. Fix your system and deploy it.
+2. `runner__run` with your `runner_id` → note the `run_id`.
+3. Poll `runner__get_report` with `runner_id` and `run_id` until the run has finished.
+4. Read it as described in [Reading a redacted report](#reading-a-redacted-report). Between fixes,
+   `runner__list_alerts` tells you when a scheduled check turns red or recovers.
+
 ## What you may call
 
-Everything you need to run tests and triage a failure blind, and nothing that would tell you
-what a passing answer looks like in advance:
+On the self-hosted path: everything you need to run tests and triage a failure blind, and
+nothing that would tell you what a passing answer looks like in advance:
 
 | Command | What it's for |
 |---|---|

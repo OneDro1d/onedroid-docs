@@ -18,7 +18,7 @@ enforced twice, not once — so do not go looking for a workaround to either:
 1. **Your credential can't reach author-scoped commands.** A runner token gets
    `not permitted for the product scope` from anything that would read scenario content —
    `list-scenarios`, `read-scenario` — naming exactly which token it needed instead
-   (`ARGUS_AUTHOR_TOKEN`). This isn't a UI restriction; it's checked at the protocol layer.
+   (`ARGUS_EXECUTOR_SECRET`, formerly `ARGUS_AUTHOR_TOKEN`). This isn't a UI restriction; it's checked at the protocol layer.
 2. **Your own environment never holds a copy.** Scenarios live in the tester's folder and the
    control plane's catalog — never in yours, even transiently. If you can see a scenario file
    on disk, something is misconfigured; say so rather than reading it.

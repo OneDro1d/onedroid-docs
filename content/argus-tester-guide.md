@@ -109,6 +109,14 @@ right cluster.
 The two generated tokens are the execution plane's own local credentials. They go only into
 the Secret it renders. Your control plane's operator gives you the execution-plane image.
 
+Three render options decide what else lands in your cluster:
+
+| Option | Default | What it does |
+|---|---|---|
+| `--obs <mode>` | `bundled` | Where the execution plane's logs and metrics go. `none` renders no observability objects at all, for a cluster that already has its own. |
+| `--podmonitor auto\|on\|off` | `auto` | The PodMonitor object in `obs.yaml`. `auto` includes it only if the cluster has the Prometheus Operator's PodMonitor type (it checks, read-only, through `--kube-context`). Use `off` on a cluster without the Prometheus Operator, where `kubectl create` would otherwise fail on that object. |
+| `--collect-sut-logs` | off | Also collect your system's own pod logs. Off by default, because those logs may carry user or agent content. When you turn it on, the render names the namespace it will read. |
+
 **4. Create the objects. Use `create`, never `apply`:**
 
 ```bash
@@ -118,6 +126,9 @@ kubectl --context <your-kube-context> create -f <out-dir>/executor.yaml -f <out-
 `executor.yaml` contains a Secret. `kubectl apply` copies a Secret's data into an annotation on
 the object, so anyone who can read the object sees the value a second time.
 
+⚠️ `executor.yaml` holds that Secret's values in plain text, and the render says so when it
+writes the file. **Delete `executor.yaml` once `kubectl create` has succeeded, and never commit it.**
+
 **5. Confirm it enrolled:**
 
 ```bash
@@ -126,6 +137,21 @@ argus cloud-executor-status --control-plane "$ARGUS_CP_URL" --instance-id <insta
 
 You want `"registered": true` **and** `"poll_accepted": true`. Once both are true, load your
 scenarios and run them once by hand before you put them on a schedule.
+
+**Adding a credential later.** When a new scenario needs a value the execution plane doesn't
+have yet, set one key on its Secret without re-rendering. The value is read from standard input
+only, never from a flag:
+
+```bash
+printf '%s' "$VALUE" | argus secrets set --key DB_PASSWORD --namespace argus-inst-<instance-id> \
+  --kube-context <your-kube-context> --restart
+argus secrets list --namespace argus-inst-<instance-id> --kube-context <your-kube-context>
+```
+
+`secrets list` prints key names only. The execution plane reads its Secret when its pod starts,
+so a new value does nothing until the pod restarts: `--restart` does that for you, and without it
+the command prints the restart to run. ⚠️ The value is a **copy**. If your system rotates the
+original, the copy goes stale without any warning: run `secrets set` again after every rotation.
 
 **Updating.** A person always decides when an execution plane updates. On Kubernetes you press
 **Update** on the Environments page, and the execution plane changes its own Deployment's image.
@@ -207,6 +233,18 @@ Each scenario in the report carries `assertions_enforced` — what was actually 
 just what you intended — and, on a fail, `failure.observed`: the real value that didn't match.
 **Check `assertions_enforced` after any change to a scenario.** It is how you know a re-run
 actually picked up your edit rather than replaying a stale copy.
+
+For a run on an enrolled instance, the `author_get_report` MCP tool reads that run's full report
+from the execution plane: every scenario's status, and on a fail both the expected and the
+observed value. It takes `instance_id` and `run_id`, and it needs an author token. It works for
+runs that are still in progress or finished but not final; a **final** run has its own sealed
+document, which `author_get_reveal` reads. An execution plane on v0.3.39 or older does not have
+it and answers `unknown relayed verb "get_full_report"`: update the execution plane first.
+
+A scenario's `## TIMEOUT` is enforced while it runs: each request (each step, in a chain) that
+takes longer than the timeout fails, and the failure names the timeout. A check that passed
+before this was enforced, but answers slower than its `## TIMEOUT`, turns red after the update.
+Set the value the scenario really needs.
 
 ## Monitor schedules
 

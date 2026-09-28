@@ -38,7 +38,7 @@ both eventually reach your local environment. Keep them apart:
 
 - **The in-env hat token** — decides who you are to the CLI/MCP surface that runs *next to your
   system* (`run`, `get-report`, `list-scenarios`, `read-scenario`, and the rest). The execution
-  plane is configured with two secrets, `ARGUS_RUNNER_TOKEN` and `ARGUS_AUTHOR_TOKEN`, at
+  plane is configured with two secrets, `ARGUS_RUNNER_TOKEN` and `ARGUS_EXECUTOR_SECRET`, at
   onboarding. Whichever one you present — with `--token` or `ARGUS_TOKEN` — is the one that
   decides your role: it must match one of the two exactly, and the matched token *is* the hat.
   Presenting the author token gets you the full test-agent hat (author + runner scope, sees
@@ -51,7 +51,12 @@ both eventually reach your local environment. Keep them apart:
   sign-in once and persists it to a local session file; every `cloud-*` command after that
   authenticates and refreshes through that session automatically. For a non-interactive caller,
   a personal access token minted from the control plane's **API Tokens** page (prefixed `odts_`,
-  shown once) can be passed as `--token` / `ARGUS_CP_TOKEN` instead of logging in.
+  shown once) can be passed as `--token` / `ARGUS_CP_AUTHOR_TOKEN` instead of logging in.
+
+> **Renamed variables.** `ARGUS_EXECUTOR_SECRET` was called `ARGUS_AUTHOR_TOKEN`, and
+> `ARGUS_CP_AUTHOR_TOKEN` was called `ARGUS_CP_TOKEN`. The old names were easy to mistake for a
+> person's author token. CLI releases after v0.3.39 read the new names and still accept the old
+> ones, with a warning. v0.3.39 and earlier read only the old names.
 
 Commands on the in-env side refuse outright if the two hat secrets aren't both configured:
 
@@ -61,11 +66,11 @@ argus list-scenarios
 
 ```json
 {
-  "error": "auth not configured: auth: token configuration invalid: both ARGUS_RUNNER_TOKEN and ARGUS_AUTHOR_TOKEN must be set (set ARGUS_RUNNER_TOKEN + ARGUS_AUTHOR_TOKEN)"
+  "error": "auth not configured: auth: token configuration invalid: both ARGUS_RUNNER_TOKEN and ARGUS_EXECUTOR_SECRET (formerly ARGUS_AUTHOR_TOKEN) must be set"
 }
 ```
 
-**What a tester needs:** the author hat token (`ARGUS_AUTHOR_TOKEN`'s value, presented as
+**What a tester needs:** the author hat token (`ARGUS_EXECUTOR_SECRET`'s value, presented as
 `--token`/`ARGUS_TOKEN`) to author and read scenarios and see unredacted reports — this is
 generated locally at onboarding, into the test-agent's own environment, and is not the same
 value as the `odts_` cloud PAT. If you're also enrolling an instance or managing workspaces

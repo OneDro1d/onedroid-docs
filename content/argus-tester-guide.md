@@ -92,7 +92,7 @@ the environment and never appears on a command line:
 set -eu
 export ARGUS_ENROLLMENT_TOKEN="$(cat <a-private-dir>/<instance-id>.enrollment)"
 export ARGUS_RUNNER_TOKEN="$(python3 -c 'import secrets;print(secrets.token_hex(32))')"
-export ARGUS_AUTHOR_TOKEN="$(python3 -c 'import secrets;print(secrets.token_hex(32))')"
+export ARGUS_EXECUTOR_SECRET="$(python3 -c 'import secrets;print(secrets.token_hex(32))')"
 export ARGUS_CP_URL=<your-argus-control-plane-url>
 export ARGUS_WORKSPACE_ID=<your-workspace-id>
 
@@ -187,7 +187,7 @@ argus read-scenario --scenario HTTP-001
 
 `read-scenario` and `list-scenarios` are author-scoped — they refuse with `not permitted for
 the product scope` on a runner token, naming exactly which token they need
-(`ARGUS_AUTHOR_TOKEN`). That refusal is the holdout enforcing itself on the tester's own tools,
+(`ARGUS_EXECUTOR_SECRET`, formerly `ARGUS_AUTHOR_TOKEN`). That refusal is the holdout enforcing itself on the tester's own tools,
 not just the builder's.
 
 ## Running

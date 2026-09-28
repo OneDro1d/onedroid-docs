@@ -35,8 +35,9 @@ workspace or machine**, not as a second session next to the builder.
    with `kubectl` access to the cluster the execution plane goes in. It creates one namespace
    there, `argus-inst-<instance-id>`, and nothing else.
 2. **Mint its author token.** In the Argus app, switch to the app's workspace, open **Tokens**,
-   and choose **Generate author token**, bound to that workspace. Set it as an environment variable
-   in the tester's environment yourself. Never paste a token into a chat: a token that passes
+   and choose **Generate author token**, bound to that workspace. Set it as the environment variable
+   `ARGUS_CP_AUTHOR_TOKEN` in the tester's environment yourself (a CLI at v0.3.39 or earlier reads
+   it as `ARGUS_CP_TOKEN`). Never paste a token into a chat: a token that passes
    through an agent's transcript should be treated as leaked.
 3. **Start the session with a brief** (template below). From there the tester follows the
    [Tester guide](/argus-tester-guide): enroll the execution plane, write the checks, run them
@@ -63,7 +64,7 @@ Paste this into the tester's first message and fill in the angle brackets:
 
 > You are the Argus **tester** for **<app>**. You decide what to test and what the tests may
 > touch. Argus workspace: `<workspace>` on `<control-plane URL>`. Your execution plane goes in
-> `<cluster>`, in its own namespace. Your author token is in `$ARGUS_AUTHOR_TOKEN`; never print
+> `<cluster>`, in its own namespace. Your author token is in `$ARGUS_CP_AUTHOR_TOKEN`; never print
 > it. Start with docs.onedroid.ai/argus-tester-guide. The builder session for this app must never
 > see your checks: give it a runner id, never files. Agree with <owner> what the tests may write
 > and any limits on it.

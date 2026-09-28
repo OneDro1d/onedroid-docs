@@ -54,8 +54,8 @@ the token, not a sign-in.
 
 | Tool | Arguments | What it does |
 |---|---|---|
-| `runner__run` | `runner_id`; optional `scenario_ref`, `tag`, `layer` | Starts a run on the paired execution plane and returns `run_id` straight away. The run keeps going after the call returns. |
-| `runner__get_report` | `runner_id`; optional `run_id` (default: the last run) | The report for one run: what your system did, never what was expected. |
+| `runner__run` | `runner_id`; optional `scenario_ref`, `tag`, `layer` | Queues a run of your app's checks and returns `run_request_id` straight away. The execution plane picks it up on its next poll. Refused, with nothing queued, if the selection matches no check. |
+| `runner__get_report` | `runner_id`; optional `run_request_id` or `run_id` (default: the last run) | The report for one run: what your system did, never what was expected. While the run is not finished it answers `queued` or `running`; an id it does not know answers `not_found`. |
 | `runner__list_alerts` | optional `instance_id`, `after_id`, `limit` | Scheduled checks that changed state: went red, produced no result, or recovered. Poll with `after_id` set to the previous call's `next_after_id`. No `runner_id`. |
 | `runner__validate_config` | `runner_id` | Checks the execution plane's configuration against its checks. |
 | `runner__get_dashboard_url` | `runner_id`; optional `correlation_id` | Links into the dashboard, deep-linked to one request if you give its correlation id. |
@@ -65,8 +65,9 @@ the token, not a sign-in.
 ### A fix loop on this path
 
 1. Fix your system and deploy it.
-2. `runner__run` with your `runner_id` → note the `run_id`.
-3. Poll `runner__get_report` with `runner_id` and `run_id` until the run has finished.
+2. `runner__run` with your `runner_id` → note the `run_request_id`.
+3. Poll `runner__get_report` with `runner_id` and `run_request_id`. It answers `queued`, then `running`
+   (with the `run_id`), then the report.
 4. Read it as described in [Reading a redacted report](#reading-a-redacted-report). Between fixes,
    `runner__list_alerts` tells you when a scheduled check turns red or recovers.
 

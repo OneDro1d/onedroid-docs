@@ -97,8 +97,8 @@ money_writes:
 Argus checks this when a check is written, when the config is validated, and when the check runs.
 Leave `money_handling` out and none of it applies.
 
-> `money_writes` needs an execution plane newer than v0.3.37. Until that release, an app with
-> `money_handling: true` gets read checks only.
+> `money_writes` needs an execution plane on v0.3.39 or later. Update the execution plane before
+> you add the block.
 
 ## Related
 

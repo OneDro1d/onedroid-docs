@@ -47,7 +47,7 @@ both eventually reach your local environment. Keep them apart:
   works.
 - **The cloud session** — decides who you are to the `cloud-*` commands (workspace management,
   enrollment, minting), which talk to the control plane over the network rather than to the
-  instance next to you. `argus cloud-login --control-plane <url>` runs an OAuth device-code
+  instance next to you. `argus cloud-login --control-plane <url> --scope author` runs an OAuth device-code
   sign-in once and persists it to a local session file; every `cloud-*` command after that
   authenticates and refreshes through that session automatically. For a non-interactive caller,
   a personal access token minted from the control plane's **API Tokens** page (prefixed `odts_`,
@@ -90,7 +90,17 @@ standing one up.
 
 ```bash
 export ARGUS_CP_URL=<your-argus-control-plane-url>
-argus cloud-login --control-plane "$ARGUS_CP_URL"
+argus cloud-login --control-plane "$ARGUS_CP_URL" --scope author
+```
+
+`--scope` is required from v0.3.41 on, and there is no default: `author` for a tester or
+operator (the `cloud-*` commands and the test-agent tools), `runner` only for a builder session.
+Without it the sign-in stops before it starts:
+
+```json
+{
+  "error": "cloud-login: --scope is required, there is no default — pass --scope author (operator/tester tools) or --scope runner (builder tools)"
+}
 ```
 
 Without `--control-plane` (or `ARGUS_CP_URL`) every `cloud-*` command refuses immediately,

@@ -60,6 +60,15 @@ plane outbound only: your system's network needs egress, never an inbound route.
 driving it by hand. See [Tester guide § Monitor schedules](/argus-tester-guide#monitor-schedules)
 for the exact call — set `mode` to `"monitor"` on every schedule you create.
 
+## Certify, and let anyone check it
+
+Beyond running and monitoring, a tester can **certify** a build: commit to what is being
+certified, write and seal a set of tests the builder never sees, then run them once as a `final`
+run. Argus anchors each step on a blockchain as it happens: the sealed set before the run, the
+verdict after it, and the moment the tests are revealed. The result is a **certificate** that a
+third party checks against the chain themselves, with no Argus account and without seeing a
+single test. See **[Ledger and certificates](/argus-ledger)**.
+
 ## Where to go next
 
 - **[Argus quickstart](/argus-quickstart)** — the two kinds of token, and the first read-only
@@ -68,3 +77,5 @@ for the exact call — set `mode` to `"monitor"` on every schedule you create.
   read a red.
 - **[Builder guide](/argus-builder-guide)** — what you may call, what you cannot see and why,
   and how to read a redacted verdict.
+- **[Ledger and certificates](/argus-ledger)** — certify a build, see every anchor in the Ledger
+  tab, and check a certificate as a third party.

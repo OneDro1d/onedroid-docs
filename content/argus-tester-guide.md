@@ -10,6 +10,8 @@ This is for whoever authors and runs Argus scenarios against a system — a pers
 agent in a two-agent loop. [What Argus is](/argus) covers the holdout — the separation that
 this guide's other half, the [Builder guide](/argus-builder-guide), lives behind.
 [Argus quickstart](/argus-quickstart) gets your CLI and tokens working; this page assumes both.
+If anything on this page refuses you, run `argus doctor --control-plane <url>` (CLI v0.3.45 or
+later) before anything else: it names the cause and prints the fix.
 
 ## Your workspace
 

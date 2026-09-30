@@ -132,6 +132,18 @@ argus cloud-executor-status --control-plane "$ARGUS_CP_URL" --instance-id <insta
 You want `"registered": true` **and** `"poll_accepted": true`. Registered alone means the
 executor introduced itself once; it does not mean anyone is listening to it now.
 
+**Stuck at any step? Run `argus doctor` first** (CLI v0.3.45 or later):
+
+```bash
+argus doctor --control-plane "$ARGUS_CP_URL"
+```
+
+It checks your control-plane sign-in (which credential you hold, and whether the control plane
+accepts it), your local tokens, your `argus-config.yaml`, your scenarios folder and the executor your
+runs land on, and prints the literal fix for each problem. It writes nothing except a renewed session
+token, and never prints a credential. Add `--config <argus-config.yaml>` and `--scenarios <dir>` once you
+have them; without `--scenarios` it checks the bundled OrderService demo folder.
+
 ## Where to go next
 
 - **Writing and running tests?** [Tester guide](/argus-tester-guide).

@@ -23,9 +23,9 @@ reads nothing else — no config, no scenarios, no control plane — so it is on
 commands that answers with no token at all. It exists for exactly that reason: to let you
 (or `argus update`) ask "what am I running?" before any credential is in place.
 
-Bare `argus --help` (no token needed either) prints the full command list. From v0.3.50,
+Bare `argus --help` (no token needed either) prints the full command list. From v0.3.41,
 `argus <command> --help` prints that command's own usage and exits `0`, with no token set. A
-name the CLI does not know prints the full command list instead. Before v0.3.50, most commands
+name the CLI does not know prints the full command list instead. Before v0.3.41, most commands
 printed the full list for `--help`, so a generic list there does not mean your token is missing.
 
 ## 2. The two kinds of token
@@ -52,7 +52,7 @@ both eventually reach your local environment. Keep them apart:
   While `ARGUS_CP_AUTHOR_TOKEN` (or its old name `ARGUS_CP_TOKEN`) is exported, it outranks the
   session file. A later `cloud-login` is not used until you `unset ARGUS_CP_AUTHOR_TOKEN
   ARGUS_CP_TOKEN`. If the control plane refuses that token, the error now says it was refused
-  (v0.3.50 or later) rather than asking you to log in again.
+  (v0.3.48 or later) rather than asking you to log in again.
 
 > **Renamed variables.** `ARGUS_EXECUTOR_SECRET` was called `ARGUS_AUTHOR_TOKEN`, and
 > `ARGUS_CP_AUTHOR_TOKEN` was called `ARGUS_CP_TOKEN`. The old names were easy to mistake for a
@@ -75,7 +75,7 @@ argus list-scenarios
 ```
 
 The `diagnose` key points at `argus doctor` and says which check of it answers this refusal
-(v0.3.50 or later). It is a separate key, so the `error` text stays the same.
+(v0.3.47 or later). It is a separate key, so the `error` text stays the same.
 
 **What a tester needs:** the author hat token (`ARGUS_EXECUTOR_SECRET`'s value, presented as
 `--token`/`ARGUS_TOKEN`) to author and read scenarios and see unredacted reports — this is
@@ -151,7 +151,7 @@ runs land on, and prints the literal fix for each problem. It writes nothing exc
 token, and never prints a credential. Add `--config <argus-config.yaml>` and `--scenarios <dir>` once you
 have them; without `--scenarios` it checks the bundled OrderService demo folder.
 
-On a tester machine, use `argus doctor --tester` instead (v0.3.50 or later). It prints one line
+On a tester machine, use `argus doctor --tester` instead (v0.3.47 or later). It prints one line
 per onboarding phase, each PASS, FAIL or SKIP: the token, the tools it reaches, the workspace,
 the cluster, the instance namespace, whether every image pull Secret the executor's Deployment
 names exists (`tester-pullsecrets`, names only, never the Secret's contents), and whether the

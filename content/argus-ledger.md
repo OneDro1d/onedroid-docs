@@ -116,7 +116,7 @@ The order matters, and each step is refused by name if you skip one:
    each run is anchored as the next version.
 
    Before a `final` or `scheduled` run starts, the executor reads the image digests that are
-   actually running in the system under test (v0.3.50 or later). If your `artifact_digest` is
+   actually running in the system under test (v0.3.47 or later). If your `artifact_digest` is
    provably not among them, the run is refused: no scenario runs, and there is no verdict. If
    the executor cannot tell, the run goes ahead and the certificate says `not_measured`, with
    the reason. On Kubernetes the system's owner must let the executor list pods in the system's
@@ -132,7 +132,7 @@ The order matters, and each step is refused by name if you skip one:
    your workspace or system. It is refused by name until the set and the verdict are both
    anchored. A v3 certificate also carries `artifact_measurement`, with `state` `matched` or
    `not_measured`: whether the digest you declared was among the digests running in the system
-   (a run on an executor older than v0.3.50 gets a v2 certificate, which says nothing about
+   (a run on an executor older than v0.3.47 gets a v2 certificate, which says nothing about
    this).
 
    **Is anchoring finished?** A certificate is issued as soon as any chain holds the verdict.
@@ -176,7 +176,7 @@ rather than trusting the one the certificate declares. Add `--btc-headers <url-o
 OpenTimestamps anchor. Give it a block explorer API base URL, or a JSON file
 `{"<height>": "<merkle root>"}`. Write the merkle root in display order, exactly as a block
 explorer or `bitcoin-cli getblockheader` prints it. A header file written for v0.3.46 used the
-other order and must be rewritten (v0.3.50 or later reads display order).
+other order and must be rewritten (v0.3.47 or later reads display order).
 
 Given a reveal document, you can go further:
 

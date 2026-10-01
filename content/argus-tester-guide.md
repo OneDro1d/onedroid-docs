@@ -151,7 +151,7 @@ argus secrets list --namespace argus-inst-<instance-id> --kube-context <your-kub
 ```
 
 If your kubeconfig is not the default one (for example `~/.config/argus/<app>.kubeconfig`), add
-`--kubeconfig <path>` to both commands (v0.3.50 or later). It goes to every `kubectl` call they
+`--kubeconfig <path>` to both commands (v0.3.47 or later). It goes to every `kubectl` call they
 make, and to the restart command they print. `export KUBECONFIG=...` does not last between an
 agent's separate shell calls.
 
@@ -168,7 +168,7 @@ for compose (Docker) installs only.
 
 **Picking up a newer kit.** Update changes the image and nothing else. To bring the rest of a
 Kubernetes instance up to date (config, environment, access rules), run `argus upgrade` with
-the same flags and environment you rendered with (v0.3.50 or later):
+the same flags and environment you rendered with (v0.3.48 or later):
 
 ```bash
 argus upgrade --instance <instance-id> --config <argus-config.yaml> --tier <tier> \
@@ -256,7 +256,7 @@ just what you intended — and, on a fail, `failure.observed`: the real value th
 **Check `assertions_enforced` after any change to a scenario.** It is how you know a re-run
 actually picked up your edit rather than replaying a stale copy.
 
-When a step in a chain fails on its claims, it carries `failed_claims` (v0.3.50 or later):
+When a step in a chain fails on its claims, it carries `failed_claims` (v0.3.49 or later):
 each claim that did not hold, as written, with the value the system showed on the step's last
 attempt. Only an author sees it. A numeric claim may compare against a value an earlier step
 saved (`body has messages > ${saved.n}`), and `save` accepts a regex for a text body. The

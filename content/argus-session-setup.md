@@ -39,6 +39,13 @@ workspace or machine**, not as a second session next to the builder.
    `ARGUS_CP_AUTHOR_TOKEN` in the tester's environment yourself (a CLI at v0.3.39 or earlier reads
    it as `ARGUS_CP_TOKEN`). Never paste a token into a chat: a token that passes
    through an agent's transcript should be treated as leaked.
+
+   On a machine whose sessions do not read `~/.bashrc` (a Coder terminal), run
+   `argus tester init <app>` instead (v0.3.50 or later). It writes an empty
+   `ARGUS_TESTER_TOKEN_<APP>=` line in `~/.config/argus/tester.env`, a helper that gives the MCP
+   client its header, an `argus-<app>` wrapper that hands the CLI the token, and an `argus`
+   entry in `.mcp.json`. It never reads or prints a token. You paste the token after the `=`
+   yourself. Then run `argus doctor --tester` to check each phase.
 3. **Start the session with a brief** (template below). From there the tester follows the
    [Tester guide](/argus-tester-guide): enroll the execution plane, write the checks, run them
    once by hand, then turn on a `monitor` schedule.
@@ -51,6 +58,12 @@ The builder is the session that already develops the app. It needs:
    **Generate builder token**. It reaches only the builder tools, and only in that workspace.
    Set it in the builder's environment yourself. ⛔ **Never give a builder an author token.** An
    author token can read the checks, and the holdout is gone.
+
+   In the builder's own notepad directory, `argus builder init <app>` (v0.3.50 or later) writes
+   the same plumbing under `.argus-builder/`, with an empty `ARGUS_BUILDER_TOKEN_<APP>=` line in
+   `builder.env` for you to fill in. Run it again after you paste the token: it asks the control
+   plane which tools that token reaches, and fails (exit 3) unless every one is a `runner__*`
+   tool. Only then does it write `.mcp.json`.
 2. **A runner id from the tester.** The tester mints one for its instance
    (`argus runner-id mint --instance-id <instance-id>`) and passes it on. The id pairs the builder
    with that execution plane; it is an identifier, not a secret.

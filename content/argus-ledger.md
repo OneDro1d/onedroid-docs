@@ -32,7 +32,7 @@ observed value, a workspace, an instance or a host.**
 |---|---|---|
 | **Commitment** (version 1) | You start a certification: `author_anchor_commit` | the commit under certification, its image digests, the runner release digest, an opaque commitment id |
 | **Scenario set sealed** (version 2) | You seal the set: `author_seal_set` | the Merkle root of the sealed scenario set, the acceptance-criteria hash, the set hash, how many scenarios |
-| **Verdict** (version 3 and later) | A `final` or scheduled certification run finishes | the run id, the artifact digest it certified, the evidence-bundle hash, the verdict |
+| **Verdict** (version 3 and later) | A `final` or scheduled certification run finishes | the run id, the artifact digest it certified, the evidence-bundle hash, the verdict, the tallies (passed, failed, errored, degraded) and when the run finished |
 | **Reveal** | Someone first reads the run's reveal document | the run id, when it was revealed, the SHA-256 of the exact reveal document, the commitment id |
 | **Run result** | Any run finishes, on chains where **Every run** is on | the run id, mode, outcome, evidence-bundle hash (and artifact digest and set hash when the run has them) |
 
@@ -80,8 +80,10 @@ it. A run id opens that run.
 
 **Runs that could not be anchored.** This section appears only when there is something in it: a
 run that finished but whose result did not land on every chain it was meant for, with the reason
-and the transactions that did land. Argus retries a write that was interrupted. A run listed here
-has ended failed and is not retried. A run is never shown as anchored when it only partly is.
+and the transactions that did land. Argus retries a run-result write that was interrupted. A run
+listed here has ended failed and is not retried. A run is never shown as anchored when it only
+partly is. A **verdict** that failed on one chain is a different case, and is retried: see step 5
+under "For AI agents".
 
 ## For AI agents: certify a build
 
@@ -102,16 +104,44 @@ The order matters, and each step is refused by name if you skip one:
 3. **Seal the set.**
    `author_seal_set` with `instance_id`. The set is frozen from here on. Its Merkle root is
    anchored as version 2, before any run against it.
+
+   An instance may hold several drafts and several sealed sets at once. When more than one
+   exists, name one with `commitment_id` on `author_seal_set`, `author_request_run` and
+   `author_set_schedule`. `author_list_commitments` lists them with their ids. Without a
+   `commitment_id`, a call is refused by name and lists the candidates.
 4. **Run it.**
    `author_request_run` with `mode: "final"` and `artifact_digest` (the digest of the artefact
    being certified). When the result arrives, the verdict is anchored as version 3. To keep
    re-certifying a live system, `author_set_schedule` re-runs the sealed set on an interval, and
    each run is anchored as the next version.
+
+   Before a `final` or `scheduled` run starts, the executor reads the image digests that are
+   actually running in the system under test (v0.3.47 or later). If your `artifact_digest` is
+   provably not among them, the run is refused: no scenario runs, and there is no verdict. If
+   the executor cannot tell, the run goes ahead and the certificate says `not_measured`, with
+   the reason. On Kubernetes the system's owner must let the executor list pods in the system's
+   namespace. `argus render-k8s --sut-namespace <ns> --emit-sut-access-role` writes that
+   read-only Role. Without it, every certifying run reads `not measured: forbidden`.
+
+   To check a certification set before you seal it, run it as a rehearsal:
+   `author_request_run` with `mode: "rehearsal"` runs the **draft** set. A rehearsal binds no
+   verdict, writes no anchor, and takes no `artifact_digest`. Its results are yours alone.
 5. **Hand out the proof.**
    `author_get_certificate` with `instance_id` and `run_id` returns the certificate: proof
    without the tests. It carries no scenario, no expected or observed value, and no id that names
    your workspace or system. It is refused by name until the set and the verdict are both
-   anchored.
+   anchored. A v3 certificate also carries `artifact_measurement`, with `state` `matched` or
+   `not_measured`: whether the digest you declared was among the digests running in the system
+   (a run on an executor older than v0.3.47 gets a v2 certificate, which says nothing about
+   this).
+
+   **Is anchoring finished?** A certificate is issued as soon as any chain holds the verdict.
+   Its `anchoring.status` is `in_progress` while a chain still lacks it: fetch the certificate
+   again until it says `complete`. A verdict that failed on one chain is retried about every
+   10 minutes for 72 hours after the run finished. When Argus stops retrying (the 72 hours
+   passed, or the commitment was revealed, or the run has no `artifact_digest`), the status is
+   `incomplete` and `anchoring.note` says which chain is missing the verdict and why. Fetching
+   again will not change it, and the certificate verifies only what it carries.
 6. **Reveal, when you choose to.**
    `author_get_reveal` with `instance_id` and `run_id` returns the full reveal document: the
    sealed scenarios, their Merkle proofs, the per-scenario verdicts and the commands to replay
@@ -121,7 +151,9 @@ The order matters, and each step is refused by name if you skip one:
 **Read the ledger.** `author_get_ledger_settings` (which chains get which records) and
 `author_list_ledger_anchors` (every anchor, newest first. Filter with `kind`: `commitment`,
 `set`, `verdict`, `reveal` or `run`. Page with `before` set to the previous call's
-`next_before`). Both are read-only. **No agent can change a ledger setting or write to a chain
+`next_before`). The answer also carries `verdict_anchor_failures` (the newest 20): each run
+whose verdict failed to anchor on a chain, with `retrying`, `retry_until` and, once `retrying`
+is false, the reason in `error`. Both are read-only. **No agent can change a ledger setting or write to a chain
 directly.** Records are written by Argus as a side effect of the steps above, and settings are
 changed by the workspace owner in the Ledger tab.
 
@@ -141,7 +173,10 @@ chain you did not point at, such as a private one, comes back `unreachable`, and
 the check. The command exits `0` when at least one of the run's verdict anchors verified and no
 anchor mismatched. Add `--chains <your own chains.json>` to check each signer against your own list
 rather than trusting the one the certificate declares. Add `--btc-headers <url-or-file>` to check an
-OpenTimestamps anchor.
+OpenTimestamps anchor. Give it a block explorer API base URL, or a JSON file
+`{"<height>": "<merkle root>"}`. Write the merkle root in display order, exactly as a block
+explorer or `bitcoin-cli getblockheader` prints it. A header file written for v0.3.46 used the
+other order and must be rewritten (v0.3.47 or later reads display order).
 
 Given a reveal document, you can go further:
 
@@ -150,7 +185,13 @@ argus anchor verify reveal.json --rpc <ethereum-rpc-url> --btc-headers <url-or-f
 argus replay <scenario_id> --against <artifact_digest> --reveal reveal.json --config argus-config.yaml
 ```
 
-`anchor verify` checks every anchor in the reveal. `replay` runs one revealed scenario against a
+`anchor verify` checks every anchor in the reveal and prints one line per check, each
+`VERIFIED`, `MISMATCH`, `UNREACHABLE` or `PENDING`. The last line is `OVERALL: verified` or
+`OVERALL: NOT verified`. It exits `0` only when no line is a `MISMATCH` and at least one of the
+run's verdict anchors is `VERIFIED`. A reveal also carries `current_receipts` beside its frozen
+bytes: an OpenTimestamps receipt that was pending when the reveal was assembled and a Bitcoin
+block has attested since. `anchor verify` uses the current receipt and says so on that line.
+`replay` runs one revealed scenario against a
 system **you deployed yourself** from the certified artefact, so you can see the verdict hold
 without trusting anyone's environment.
 

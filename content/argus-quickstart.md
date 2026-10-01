@@ -23,13 +23,10 @@ reads nothing else — no config, no scenarios, no control plane — so it is on
 commands that answers with no token at all. It exists for exactly that reason: to let you
 (or `argus update`) ask "what am I running?" before any credential is in place.
 
-Bare `argus --help` (no token needed either) prints the full command list. For most other
-commands, though, `argus <command> --help` does **not** print that command's own usage — it
-falls back to the same full command list, whether or not a token is set, because the CLI
-checks the tokens are configured before it looks at what you actually typed. A handful of
-commands parse their own flags and DO print real per-command usage without a token —
-`preflight` (below) is one; if `<command> --help` gives you the generic list instead of specific
-flags, that is expected, not a sign your token is missing.
+Bare `argus --help` (no token needed either) prints the full command list. From v0.3.41,
+`argus <command> --help` prints that command's own usage and exits `0`, with no token set. A
+name the CLI does not know prints the full command list instead. Before v0.3.41, most commands
+printed the full list for `--help`, so a generic list there does not mean your token is missing.
 
 ## 2. The two kinds of token
 
@@ -52,13 +49,19 @@ both eventually reach your local environment. Keep them apart:
   authenticates and refreshes through that session automatically. For a non-interactive caller,
   a personal access token minted from the control plane's **API Tokens** page (prefixed `odts_`,
   shown once) can be passed as `--token` / `ARGUS_CP_AUTHOR_TOKEN` instead of logging in.
+  While `ARGUS_CP_AUTHOR_TOKEN` (or its old name `ARGUS_CP_TOKEN`) is exported, it outranks the
+  session file. A later `cloud-login` is not used until you `unset ARGUS_CP_AUTHOR_TOKEN
+  ARGUS_CP_TOKEN`. If the control plane refuses that token, the error now says it was refused
+  (v0.3.48 or later) rather than asking you to log in again.
 
 > **Renamed variables.** `ARGUS_EXECUTOR_SECRET` was called `ARGUS_AUTHOR_TOKEN`, and
 > `ARGUS_CP_AUTHOR_TOKEN` was called `ARGUS_CP_TOKEN`. The old names were easy to mistake for a
 > person's author token. CLI releases after v0.3.39 read the new names and still accept the old
 > ones, with a warning. v0.3.39 and earlier read only the old names.
 
-Commands on the in-env side refuse outright if the two hat secrets aren't both configured:
+Most commands on the in-env side refuse outright if the two hat secrets aren't both configured.
+Four local checks need no token at all: `validate-scenario`, `validate-config`, `package-check`
+and `propose-from-repo`. Everything else, `list-scenarios` for example, refuses:
 
 ```bash
 argus list-scenarios
@@ -66,9 +69,13 @@ argus list-scenarios
 
 ```json
 {
-  "error": "auth not configured: auth: token configuration invalid: both ARGUS_RUNNER_TOKEN and ARGUS_EXECUTOR_SECRET (formerly ARGUS_AUTHOR_TOKEN) must be set"
+  "error": "auth not configured: auth: token configuration invalid: both ARGUS_RUNNER_TOKEN and ARGUS_EXECUTOR_SECRET (formerly ARGUS_AUTHOR_TOKEN) must be set",
+  "diagnose": "argus doctor — read-only; its local-hats check says which of ARGUS_TOKEN, ARGUS_RUNNER_TOKEN, ARGUS_EXECUTOR_SECRET is missing or mismatched (they are a role map: any two distinct strings), and the export that fixes it"
 }
 ```
+
+The `diagnose` key points at `argus doctor` and says which check of it answers this refusal
+(v0.3.47 or later). It is a separate key, so the `error` text stays the same.
 
 **What a tester needs:** the author hat token (`ARGUS_EXECUTOR_SECRET`'s value, presented as
 `--token`/`ARGUS_TOKEN`) to author and read scenarios and see unredacted reports — this is
@@ -143,6 +150,12 @@ accepts it), your local tokens, your `argus-config.yaml`, your scenarios folder 
 runs land on, and prints the literal fix for each problem. It writes nothing except a renewed session
 token, and never prints a credential. Add `--config <argus-config.yaml>` and `--scenarios <dir>` once you
 have them; without `--scenarios` it checks the bundled OrderService demo folder.
+
+On a tester machine, use `argus doctor --tester` instead (v0.3.47 or later). It prints one line
+per onboarding phase, each PASS, FAIL or SKIP: the token, the tools it reaches, the workspace,
+the cluster, the instance namespace, whether every image pull Secret the executor's Deployment
+names exists (`tester-pullsecrets`, names only, never the Secret's contents), and whether the
+executor is registered and polling. It exits `4` on any FAIL.
 
 ## Where to go next
 

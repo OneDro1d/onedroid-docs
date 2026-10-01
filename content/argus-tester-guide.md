@@ -150,6 +150,11 @@ printf '%s' "$VALUE" | argus secrets set --key DB_PASSWORD --namespace argus-ins
 argus secrets list --namespace argus-inst-<instance-id> --kube-context <your-kube-context>
 ```
 
+If your kubeconfig is not the default one (for example `~/.config/argus/<app>.kubeconfig`), add
+`--kubeconfig <path>` to both commands (v0.3.47 or later). It goes to every `kubectl` call they
+make, and to the restart command they print. `export KUBECONFIG=...` does not last between an
+agent's separate shell calls.
+
 `secrets list` prints key names only. The execution plane reads its Secret when its pod starts,
 so a new value does nothing until the pod restarts: `--restart` does that for you, and without it
 the command prints the restart to run. ⚠️ The value is a **copy**. If your system rotates the
@@ -160,6 +165,21 @@ original, the copy goes stale without any warning: run `secrets set` again after
 It can change that Deployment and nothing else in the namespace. Before it changes anything, it
 checks that the cluster can pull the new image. The copy-paste update command on that page is
 for compose (Docker) installs only.
+
+**Picking up a newer kit.** Update changes the image and nothing else. To bring the rest of a
+Kubernetes instance up to date (config, environment, access rules), run `argus upgrade` with
+the same flags and environment you rendered with (v0.3.48 or later):
+
+```bash
+argus upgrade --instance <instance-id> --config <argus-config.yaml> --tier <tier> \
+  --sut-namespace <your-system-namespace> --kube-context <your-kube-context>
+```
+
+That is a dry run. It writes nothing and shows, object by object, what would change. Read it,
+then add `--apply`: it creates what the newer kit adds and patches only the objects that differ.
+It never removes anything, never touches a Secret's value, and leaves the executor image alone.
+A change that restarts the executor pod is announced with a `=> POD RESTART:` line. With one
+replica the executor has no pod while it rolls, and a run in flight is cut.
 
 ## Writing a scenario
 
@@ -235,6 +255,12 @@ Each scenario in the report carries `assertions_enforced` — what was actually 
 just what you intended — and, on a fail, `failure.observed`: the real value that didn't match.
 **Check `assertions_enforced` after any change to a scenario.** It is how you know a re-run
 actually picked up your edit rather than replaying a stale copy.
+
+When a step in a chain fails on its claims, it carries `failed_claims` (v0.3.49 or later):
+each claim that did not hold, as written, with the value the system showed on the step's last
+attempt. Only an author sees it. A numeric claim may compare against a value an earlier step
+saved (`body has messages > ${saved.n}`), and `save` accepts a regex for a text body. The
+`scenario-author` skill that ships with Argus has the details.
 
 For a run on an enrolled instance, the `author_get_report` MCP tool reads that run's full report
 from the execution plane: every scenario's status, and on a fail both the expected and the

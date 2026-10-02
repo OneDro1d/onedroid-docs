@@ -42,7 +42,7 @@ Linux steps inside it.
 
 Once you hold a token or an enrolled instance, cross-check the install against the version your
 control plane recommends (`min_recommended_version` in the `author_get_executor_status` MCP tool;
-the Environments page shows it too), rather than trusting a number written in a document.
+the **Environments** page under **Settings** shows it too), rather than trusting a number written in a document.
 
 Confirm you have it:
 
@@ -82,7 +82,7 @@ the **author token** and **builder token** are a person's; `ARGUS_EXECUTOR_SECRE
   instance next to you. `argus cloud-login --control-plane <url> --scope author` runs an OAuth device-code
   sign-in once and persists it to a local session file; every `cloud-*` command after that
   authenticates and refreshes through that session automatically. For a non-interactive caller,
-  an **author token** (the control plane's **API Tokens** page, then **Generate author token**;
+  an **author token** (the control plane's **Settings → API Tokens** page, then **Generate author token**;
   prefixed `odts_`, shown once) can be passed as `--token` / `ARGUS_CP_AUTHOR_TOKEN` instead of
   logging in.
   While `ARGUS_CP_AUTHOR_TOKEN` (or its old name `ARGUS_CP_TOKEN`) is exported, it outranks the
@@ -120,7 +120,7 @@ unredacted reports from the CLI next to the system, it also needs the full test-
 locally at onboarding, into the test-agent's own environment, and is not the same value as the
 `odts_` author token.
 
-**What a builder needs:** a **builder token** (the **API Tokens** page, then **Generate builder
+**What a builder needs:** a **builder token** (**Settings → API Tokens**, then **Generate builder
 token**), which reaches only the `runner__*` tools. A builder who calls the CLI next to the system
 uses the runner hat instead: `ARGUS_RUNNER_TOKEN`'s value.
 It reaches the same six-tool runner surface the author hat also has (`validate-config`, `run`,

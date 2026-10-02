@@ -43,7 +43,7 @@ If you were given a runner id, you are on the first path.
 
 ### Connect your session
 
-1. Your operator generates a **builder token** in the Argus app (**API Tokens** → *Generate builder
+1. Your operator generates a **builder token** in the Argus app (**Settings → API Tokens** → *Generate builder
    token*, in your app's workspace) and puts it in a file in your environment. It is not an
    **author token**, and not the execution plane's own `ARGUS_RUNNER_TOKEN`
    ([the token table](/argus-session-setup#the-tokens)). Never paste a token into a chat.

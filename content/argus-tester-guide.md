@@ -126,7 +126,7 @@ the Secret it renders.
 
 Your control plane's operator gives you the execution-plane image. Name it by its release tag,
 **`v<version>-slim`**, where `<version>` is the version your control plane recommends (the
-Environments page shows it, and so does `min_recommended_version` in the
+**Environments** page (under **Settings**) shows it, and so does `min_recommended_version` in the
 `author_get_executor_status` MCP tool). Never use the plain `:slim` tag: it moves, so an instance
 installed from it has a version nobody can state, and the version checks and the Update button
 cannot rank it.
@@ -181,7 +181,7 @@ the command prints the restart to run. ⚠️ The value is a **copy**. If your s
 original, the copy goes stale without any warning: run `secrets set` again after every rotation.
 
 **Updating.** A person always decides when an execution plane updates. On Kubernetes you press
-**Update** on the Environments page, and the execution plane changes its own Deployment's image.
+**Update** on the **Settings → Environments** page, and the execution plane changes its own Deployment's image.
 It can change that Deployment and nothing else in the namespace. Before it changes anything, it
 checks that the cluster can pull the new image. The image it moves to is the recommended
 `v<version>-slim` release. The copy-paste update command on that page is

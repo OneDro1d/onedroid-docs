@@ -347,7 +347,7 @@ How to read the result:
 - **ALL SET**: go on to Step 5.
 - **PARTIALLY SET**: the reason is printed next to it.
 - **Exit 3**: the instance *is* registered, but something was not ready yet. Do not tear it down;
-  wait a few minutes and look at the Environments page of your control plane.
+  wait a few minutes and look at **Settings → Environments** on your control plane.
 - **A different instance name** (for example `-v1` added): the name was taken. Use the printed name
   from then on.
 

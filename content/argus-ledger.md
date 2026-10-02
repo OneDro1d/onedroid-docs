@@ -58,9 +58,9 @@ A third party can read a public chain themselves. A private chain is proof only 
 reach it. For a certificate you will hand to someone outside, keep certification on at least one
 public chain.
 
-## For people: the Ledger tab
+## For people: the Proof page
 
-Open **Ledger** in the sidebar of your workspace.
+Open **Proof** in the sidebar of your workspace (the page that asks *Can I prove it?*; it was called Ledger before October 2026).
 
 **What gets written to each chain.** One row per chain, two switches:
 
@@ -155,7 +155,7 @@ The order matters, and each step is refused by name if you skip one:
 whose verdict failed to anchor on a chain, with `retrying`, `retry_until` and, once `retrying`
 is false, the reason in `error`. Both are read-only. **No agent can change a ledger setting or write to a chain
 directly.** Records are written by Argus as a side effect of the steps above, and settings are
-changed by the workspace owner in the Ledger tab.
+changed by the workspace owner on the Proof page.
 
 ## For anyone: check a certificate
 

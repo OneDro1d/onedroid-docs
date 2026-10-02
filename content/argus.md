@@ -91,6 +91,10 @@ These pages describe Argus v0.3.52. Each note below links to the section that ha
   failed body check named for the tester. See [Running](/argus-tester-guide#running).
 - **Install the CLI from a release** and the `argus doctor` fixes: see the
   [Quickstart](/argus-quickstart#1-get-the-argus-cli).
+- **A new web app layout** (control plane, October 2026): the sidebar has five places, **Overview**,
+  **Capacity**, **Runs**, **Checks** and **Proof** (Proof was called Ledger). **Environments**,
+  **API Tokens**, **My workspaces** and **Onboarding & setup** are in the **Settings** menu at the top
+  right. Old links still open.
 
 ## Where to go next
 
@@ -102,5 +106,5 @@ These pages describe Argus v0.3.52. Each note below links to the section that ha
   read a red.
 - **[Builder guide](/argus-builder-guide)** — what you may call, what you cannot see and why,
   and how to read a redacted verdict.
-- **[Ledger and certificates](/argus-ledger)** — certify a build, see every anchor in the Ledger
-  tab, and check a certificate as a third party.
+- **[Ledger and certificates](/argus-ledger)** — certify a build, see every anchor on the Proof
+  page, and check a certificate as a third party.

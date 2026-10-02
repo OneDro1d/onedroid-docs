@@ -44,21 +44,21 @@ names are used on every Argus page.
 
 | Name | Who holds it | Where it comes from | Where it goes |
 |---|---|---|---|
-| **Author token** | the tester | the **API Tokens** page, then **Generate author token**, bound to the app's workspace | the environment variable `ARGUS_CP_AUTHOR_TOKEN` in the tester's environment |
-| **Builder token** | the builder | the **API Tokens** page, then **Generate builder token**, bound to the app's workspace | the builder's own environment; it reaches only the `runner__*` tools |
+| **Author token** | the tester | **Settings → API Tokens**, then **Generate author token**, bound to the app's workspace | the environment variable `ARGUS_CP_AUTHOR_TOKEN` in the tester's environment |
+| **Builder token** | the builder | **Settings → API Tokens**, then **Generate builder token**, bound to the app's workspace | the builder's own environment; it reaches only the `runner__*` tools |
 | `ARGUS_EXECUTOR_SECRET` | the execution plane | generated when the execution plane is installed | the Secret the install renders, in the execution plane's namespace |
 | `ARGUS_RUNNER_TOKEN` | the execution plane | generated when the execution plane is installed | the same Secret |
 
 `ARGUS_EXECUTOR_SECRET` and `ARGUS_RUNNER_TOKEN` are the execution plane's own two local secrets.
 They are not a person's token, and they are not what a tester or builder uses to reach the
-control plane. The page is called **API Tokens**, in the Argus app's sidebar and in its title.
+control plane. The page is called **API Tokens**; open it from the **Settings** menu at the top right of the Argus app.
 Never paste any of these into a chat: a token that passes through an agent's transcript should
 be treated as leaked.
 
 ## Before you start
 
 - An Argus account on your control plane, and one **workspace per app**. Create it on the
-  **My workspaces** page; everything for that app (instances, checks, runs, tokens) lives in it.
+  **Settings → My workspaces** page (**Create workspace**); everything for that app (instances, checks, runs, tokens) lives in it.
 - A cluster where the app's execution plane will run, ideally where the app lives. The execution
   plane only needs outbound HTTPS to your app and to the control plane
   ([Installing into a Kubernetes cluster](/argus-tester-guide#installing-into-a-kubernetes-cluster)).
@@ -69,7 +69,7 @@ be treated as leaked.
 1. **Give it its own environment**: a workspace or machine that the builder does not share,
    with `kubectl` access to the cluster the execution plane goes in. It creates one namespace
    there, `argus-inst-<instance-id>`, and nothing else.
-2. **Mint its author token.** In the Argus app, switch to the app's workspace, open **API Tokens**,
+2. **Mint its author token.** In the Argus app, switch to the app's workspace, open **Settings → API Tokens**,
    and choose **Generate author token**, bound to that workspace. Set it as the environment variable
    `ARGUS_CP_AUTHOR_TOKEN` in the tester's environment yourself (a CLI at v0.3.39 or earlier reads
    it as `ARGUS_CP_TOKEN`).
@@ -92,7 +92,7 @@ be treated as leaked.
 Do this after the tester's schedule is on. The builder is the session that already develops the
 app. It needs:
 
-1. **A builder token.** In the Argus app, open **API Tokens** in the app's workspace and choose
+1. **A builder token.** In the Argus app, open **Settings → API Tokens** in the app's workspace and choose
    **Generate builder token**. It reaches only the builder tools, and only in that workspace.
    Set it in the builder's environment yourself. ⛔ **Never give a builder an author token.** An
    author token can read the checks, and the holdout is gone.

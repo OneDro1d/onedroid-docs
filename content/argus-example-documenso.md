@@ -207,7 +207,7 @@ project:
   name: documenso
 targets:
   http:
-    base_url: http://documenso:3100/api/v2   # Argus uses only scheme://host:port; the /api/v2 path is in each scenario
+    base_url: http://documenso:3100          # scheme://host:port only; the /api/v2 path is in each scenario
   database:
     type: postgres
     jdbc_url: jdbc:postgresql://database:5432/documenso
@@ -235,9 +235,9 @@ observability:
 Every address is written as the Argus executor sees it from inside Documenso's Docker network:
 `documenso` and `database` are the compose service names. Never `localhost`.
 
-Argus keeps only the scheme, host and port of `base_url` and takes the path from each scenario.
-From v0.3.51, `validate-config` warns when `base_url` carries a path, and names the cure. You can
-also write `base_url: http://documenso:3100` and lose nothing.
+Argus keeps only the scheme, host and port of `base_url` and takes the path from each scenario, so
+`base_url` carries no path. From v0.3.51, `validate-config` warns when it does (for example
+`http://documenso:3100/api/v2`), and names the cure.
 
 **2f. Four scenarios** in `~/argus-documenso/test-agent/scenarios/`. Each is a read-only GET that
 needs no IDs. Here is `RT-GET-document.md`:

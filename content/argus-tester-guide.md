@@ -21,6 +21,9 @@ reach, and `argus cloud-switch-workspace` changes which one later commands act o
 
 ## Enrolling an instance
 
+To see one real app taken through onboarding from start to finish, with its config and scenarios,
+read [Onboarding examples](/argus-onboarding-examples).
+
 An **instance** is one execution plane, running next to one system, identified by an
 `instance_id`. Standing one up is an operator-level step — it needs somewhere to run the
 execution plane (a compose stack, a container namespace, or a cluster namespace next to your

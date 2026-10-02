@@ -10,13 +10,16 @@ This is for whoever authors and runs Argus scenarios against a system — a pers
 agent in a two-agent loop. [What Argus is](/argus) covers the holdout — the separation that
 this guide's other half, the [Builder guide](/argus-builder-guide), lives behind.
 [Argus quickstart](/argus-quickstart) gets your CLI and tokens working; this page assumes both.
+An app gets a tester and a builder session, and you are the first of them: [Set up a tester and a
+builder](/argus-session-setup) has the order (tester first: enroll, run once by hand, turn the
+schedule on; then the builder is wired with a runner id) and the token table.
 If anything on this page refuses you, run `argus doctor --control-plane <url>` (CLI v0.3.45 or
 later) before anything else: it names the cause and prints the fix.
 
 ## Your workspace
 
 Everything you author and run is scoped to a **workspace** — one per system under test, in the
-common case. Your author token is bound to it: `argus cloud-list-workspaces` shows what you can
+common case. Your **author token** (`ARGUS_CP_AUTHOR_TOKEN`) is bound to it: `argus cloud-list-workspaces` shows what you can
 reach, and `argus cloud-switch-workspace` changes which one later commands act on.
 
 ## Enrolling an instance
@@ -61,15 +64,21 @@ argus preflight --tier <tier> --kube-context <your-kube-context> --control-plane
 ```
 
 The tier picks the storage class for the results volume and how the observability services
-are exposed:
+are exposed. `argus preflight --tier` takes `aks`, `k3d` or `managed`; `argus render-k8s --tier`
+takes those and `eks` and `gke` (`argus preflight --help` and `argus render-k8s --help` list them):
 
-| Tier | Storage class it uses |
-|---|---|
-| `k3d`, `kind`, `minikube` | `argus-rwx`, a shared class you install first (preflight says how) |
-| `aks` | `azurefile-csi` |
-| `managed` (any other cluster) | `local-path`, unless you pass `--storage-class` |
+| Tier | Use it for | Storage class it uses |
+|---|---|---|
+| `k3d` | a local k3d cluster. Use it for kind and minikube too: it renders identically | `argus-rwx`, a shared class you install first (preflight says how) |
+| `aks` | Azure Kubernetes Service | `azurefile-csi` |
+| `managed` | any other cluster, including one you run yourself (k3s, kubeadm) | `local-path`, unless you pass `--storage-class` |
+| `eks`, `gke` | Amazon EKS and Google GKE (`render-k8s` only) | the same as `managed` |
 
-On any other managed cluster, pass `--storage-class <a class your cluster has>` in step 3.
+`kind`, `minikube` and `k3s` are **not** tiers. `render-k8s` refuses them before it writes
+anything, and `preflight` reports the tier as blocking. The refusal says which tier to use
+instead: `k3d` for kind and minikube, `managed` for k3s.
+
+On a `managed` cluster, pass `--storage-class <a class your cluster has>` in step 3.
 `kubectl get storageclass` lists them. ⚠️ Passing `--storage-class` on its own requests
 ReadWriteMany. Most cloud block-storage classes only support ReadWriteOnce, so with one of
 those also pass `--results-access-mode ReadWriteOnce`, or the volume never binds. ReadWriteOnce
@@ -111,14 +120,22 @@ On a `managed` cluster, add `--storage-class <class>`, plus `--results-access-mo
 if that class needs it. `--kube-context` is recorded on the instance, so later updates target the
 right cluster.
 
-The two generated tokens are the execution plane's own local credentials. They go only into
-the Secret it renders. Your control plane's operator gives you the execution-plane image.
+`ARGUS_RUNNER_TOKEN` and `ARGUS_EXECUTOR_SECRET` are the execution plane's own two local secrets,
+not a person's token (see [the token table](/argus-session-setup#the-tokens)). They go only into
+the Secret it renders.
+
+Your control plane's operator gives you the execution-plane image. Name it by its release tag,
+**`v<version>-slim`**, where `<version>` is the version your control plane recommends (the
+Environments page shows it, and so does `min_recommended_version` in the
+`author_get_executor_status` MCP tool). Never use the plain `:slim` tag: it moves, so an instance
+installed from it has a version nobody can state, and the version checks and the Update button
+cannot rank it.
 
 Three render options decide what else lands in your cluster:
 
 | Option | Default | What it does |
 |---|---|---|
-| `--obs <mode>` | `bundled` | Where the execution plane's logs and metrics go. `none` renders no observability objects at all, for a cluster that already has its own. |
+| `--obs <mode>` | `bundled` | Where the execution plane's logs and metrics go: `bundled`, `adopt`, `export`, `shared` or `none`. `none` renders no observability objects at all, for an environment that already has its own; pair it with [your own dashboard link](#your-own-dashboard-link-v0352-or-later). On the Docker (compose) path `--obs none` also starts no shared observability stack (v0.3.52 or later). Pass the same `--obs` to `argus preflight`. |
 | `--podmonitor auto\|on\|off` | `auto` | The PodMonitor object in `obs.yaml`. `auto` includes it only if the cluster has the Prometheus Operator's PodMonitor type (it checks, read-only, through `--kube-context`). Use `off` on a cluster without the Prometheus Operator, where `kubectl create` would otherwise fail on that object. |
 | `--collect-sut-logs` | off | Also collect your system's own pod logs. Off by default, because those logs may carry user or agent content. When you turn it on, the render names the namespace it will read. |
 
@@ -166,7 +183,8 @@ original, the copy goes stale without any warning: run `secrets set` again after
 **Updating.** A person always decides when an execution plane updates. On Kubernetes you press
 **Update** on the Environments page, and the execution plane changes its own Deployment's image.
 It can change that Deployment and nothing else in the namespace. Before it changes anything, it
-checks that the cluster can pull the new image. The copy-paste update command on that page is
+checks that the cluster can pull the new image. The image it moves to is the recommended
+`v<version>-slim` release. The copy-paste update command on that page is
 for compose (Docker) installs only.
 
 **Picking up a newer kit.** Update changes the image and nothing else. To bring the rest of a
@@ -183,6 +201,88 @@ then add `--apply`: it creates what the newer kit adds and patches only the obje
 It never removes anything, never touches a Secret's value, and leaves the executor image alone.
 A change that restarts the executor pod is announced with a `=> POD RESTART:` line. With one
 replica the executor has no pod while it rolls, and a run in flight is cut.
+
+## Configuring what your environment shows
+
+Three optional blocks in `argus-config.yaml` change what the Argus app shows for your
+environment. They need an execution plane on v0.3.52 or later: an older one ignores them, and the
+Argus app shows nothing for them (one implicit test target, no summary numbers).
+`observability.dashboard_link` sits under `observability:`. `test_targets` and `summary_metrics`
+are **top-level** keys, beside `targets:`. Never put either inside `targets:`: that block is
+checked strictly, and an older execution plane would refuse the whole config.
+
+### Your own dashboard link (v0.3.52 or later)
+
+If your environment already has dashboards (Grafana, Zabbix, Datadog, an internal page), say where
+a run's dashboard lives. The control plane then renders a link for every run, past runs included,
+with no re-run:
+
+```yaml
+observability:
+  dashboard_link:
+    template: "https://grafana.lab.example/d/shop?var-run={run_id}&from={from}&to={to}"
+    label: "Open in Grafana"        # optional; default "Open dashboard"
+```
+
+The template may use `{run_id}`, `{correlation_id}` (the run's prefix, `tr-<run_id>`), `{instance}`,
+`{target}`, `{from}` and `{to}` (epoch milliseconds: the run's start minus 5 minutes, and its finish
+plus 5 minutes). Anything else in braces, a credential in the URL (`user:pass@host`), a `${VAR}`,
+or a URL that is not `http` or `https` is refused when the config loads: a link is shown to
+people, so it never carries a secret. With a template declared, a missing per-tier `public_url`
+is no longer a warning. With neither a template nor a link from the run itself, the Argus app says
+no dashboard is linked for that environment.
+
+### Several test targets (v0.3.52 or later)
+
+One instance can test more than one thing in the same environment, for example a live system and
+its lab copy. Name them, and every run is stamped with the targets it tested:
+
+```yaml
+test_targets:
+  - name: live                      # lower-case, unique; "unassigned" is reserved
+    label: shop live
+    namespace: shop                 # shown only; never used to dial anything
+    match: { scenario_prefixes: [NHB-], tags: [heartbeat] }
+  - name: lab
+    label: shop lab
+    namespace: shop-lab
+    match: { scenario_prefixes: [NLB-], tags: [lab] }
+    dashboard_link_template: ""     # optional per-target override of the link above
+```
+
+At most 8 targets, each with a non-empty `match`. A check belongs to the first target (in file
+order) whose `scenario_prefixes` match its id; failing that, to the first whose `tags` intersect
+its tags; otherwise it is `unassigned`. Targets come from your declaration and the ids of the
+checks that ran, never from anything your system says. A run is stamped when it ends; changing the
+declaration later does not re-stamp past runs. With no `test_targets` there is one implicit target,
+as before. This is not the connection `targets:` block (http, database, message_broker).
+
+### Summary numbers from your environment's own metrics (v0.3.52 or later)
+
+A few named numbers, such as agents connected now or broker headroom, can reach the Argus app from
+the metrics your environment already has. The executor reads them on its own clock and reports the
+latest value of each. It never sends a series:
+
+```yaml
+summary_metrics:
+  every: 5m                          # 1m to 60m; default 5m
+  source:
+    type: prometheus                 # or metrics_endpoint
+    url: http://prometheus.example:9090   # no credential and no query string in the URL
+    credential: ${METRICS_CREDENTIAL}     # optional: a ${VAR} for user:password, never a literal
+  readings:                          # 1 to 12
+    - name: agents_connected         # ^[a-z][a-z0-9_]{0,39}$, unique
+      unit: agents
+      query: sum(connected_agents)
+      comfortable_limit: 400         # optional display aid, never a gate
+```
+
+A `prometheus` query must return one number. A `metrics_endpoint` query is a series name with an
+optional `{label="value"}` matcher; matching samples are summed. A reading that could not be read
+is reported as an error with no value, never as `0`, so "no agents" cannot be mistaken for "could
+not ask". A value older than three intervals is marked stale. Only an author sees these numbers;
+a builder token cannot read them. `argus validate-config` refuses a mistyped key inside the block
+by name.
 
 ## Writing a scenario
 
@@ -225,6 +325,10 @@ delivery, error paths, rate limiting, or permissions — and only the layers you
 actually use need a target configured. An HTTP-and-database system with no message bus is a
 complete, ordinary thing to test.
 
+In an HTTP body check, `equals` is exact from v0.3.51: `currentPage equals 1` no longer passes on
+`10`, and an operator Argus does not know fails the check instead of passing it. On v0.3.50 and
+earlier `equals` was checked as "contains".
+
 Author with the dedicated tools, not by hand-editing files on disk: `propose-scenario` turns
 plain English into a draft, `validate-scenario --file <draft.md>` checks its shape before
 anything is written, and `write-scenario --file <draft.md> --path <ID>-<slug>.md` validates
@@ -258,6 +362,14 @@ Each scenario in the report carries `assertions_enforced` — what was actually 
 just what you intended — and, on a fail, `failure.observed`: the real value that didn't match.
 **Check `assertions_enforced` after any change to a scenario.** It is how you know a re-run
 actually picked up your edit rather than replaying a stale copy.
+
+A status-only check shows `assertions_enforced` count `0`, which is not "nothing was checked".
+From v0.3.51 the report also carries `observed_status`, the HTTP status the system returned (when
+several requests fired it also carries `observed_status_codes`, each distinct code once), for
+both the tester and the builder. And when an HTTP check fails on a body bullet, the tester's report
+names which one in `failure.failed_body_check` (v0.3.52 or later): the bullet's number and its text
+as you wrote it. If several bullets would fail, it names the first. A builder's report never
+carries it, because the bullet holds the expected value.
 
 When a step in a chain fails on its claims, it carries `failed_claims` (v0.3.49 or later):
 each claim that did not hold, as written, with the value the system showed on the step's last
@@ -310,6 +422,9 @@ schedule that runs: `author_get_run_status` (with neither `run_id` nor `run_requ
 the schedule, and after one interval has passed its `last_requested_at` should be set and
 `last_skip_reason` absent.
 
+A scheduled run never carries an [AMQP load](#load-testing) scenario: the control plane does
+not queue one for a `scheduled`, `final` or `rehearsal` run.
+
 To stop a schedule without losing it, call `author_set_schedule` again with `interval: "off"`
 (keep `mode: "monitor"` on that call too):
 
@@ -320,6 +435,87 @@ To stop a schedule without losing it, call `author_set_schedule` again with `int
   "mode": "monitor"
 }
 ```
+
+## Load testing
+
+A scenario declares a load in a `## LOAD` section. Two kinds exist. A scenario on an ordinary
+layer (HTTP and the others) holds `**Users**`, `**Ramp Seconds**`, `**Duration Seconds**`,
+`**Target P95 Ms**` and `**Max Error Rate**`. A scenario on the **AMQP Load** layer (v0.3.52 or
+later) drives sessions against a message broker, and is described below.
+
+### Load numbers taken before v0.3.52
+
+⚠️ **From v0.3.37 to v0.3.51, every JMeter template ignored the declared `**Duration Seconds**`.**
+Each user sent one pass and left, so a load that said "50 users for 120 seconds" was not that load.
+Load numbers taken with those versions (since 2026-09-15) are not measured: **re-run them on
+v0.3.52 or later.** From v0.3.52 a scenario with a declared duration holds its users for that
+long; a scenario with no duration still runs once and ends.
+
+### AMQP load: allow a broker first (v0.3.52 or later)
+
+Argus runs AMQP load only against a broker you have marked as one that may take it. It is off by
+default. Declare the broker as a **named** entry under `targets.message_broker_targets` (the plain
+`message_broker` slot can never be a load target), then list it under the **top-level**
+`load_allowed_targets` key, beside `targets:`:
+
+```yaml
+load_allowed_targets:
+  shop-lab:                # a name under targets.message_broker_targets
+    max_sessions: 1000        # optional ceiling for one step; default 2000, at most 10000
+```
+
+List a lab or a dedicated test broker, never a live one. A listed entry whose `url` or
+`management_url` has a `prod`, `production`, `prd` or `shared` segment is refused when the config
+loads. Like `test_targets`, the key goes beside `targets:` and not inside it.
+
+A load scenario then names that broker with `**Target**: <name>`, uses the layer `AMQP Load`, and
+declares its profile in `## LOAD`: `**Steps**` (session counts, one run each, at most 12 steps of 1
+to 2000 sessions), `**Step Duration Seconds**`, and the thresholds `**Target P95 Ms**` and
+`**Max Error Rate**`; the rest is optional (`Ramp Seconds`, `Settle Seconds`, `Rate Per Session`,
+`Message Size`, `Queue Type`, `Confirm`, `Ack`, `Prefetch`, `Min Delivered Ratio`,
+`Must Sustain`). Its `### Runnable` claims are only `broker is not blocked` and
+`every step is measured`; a `status=` bullet is refused, because there is no HTTP response. It
+cannot share a scenario with another layer. `argus validate-config` and `validate-scenario` tell
+you what is missing.
+
+### What is refused
+
+- **A target you did not allow.** The run ends with status `error` (not `failed`: it says nothing
+  about your system) and an `Observed` line that starts `refused before firing` and ends `Nothing
+  was sent.` The check runs before anything dials the broker. `validate-config` reports the same
+  problem earlier. A step above the entry's `max_sessions` is refused the same way.
+- **An execution plane older than 0.3.52.** The control plane does not queue the run for it. (A
+  source build whose version it cannot rank is not refused; an older execution plane would
+  refuse the layer by name anyway.)
+- **Certification, scheduled and rehearsal runs.** The control plane does not queue a set holding
+  an AMQP load scenario for a `final`, `scheduled` or `rehearsal` run, and the scenario cannot be
+  written into a certification set: no load ramp sits under a certified verdict.
+
+### Where the results show
+
+The run's results include one record per step: sessions, the rates offered, sent, confirmed and
+delivered, the delivered ratio, publish-to-confirm and publish-to-deliver quantiles, errors by
+class, and any time the broker blocked. They are stored and shown like any run's:
+
+- **`author_get_run_status`** returns them in the run's `load_ramp`, one entry per load scenario.
+- **Grafana** has them as the `argus_load_step_*` series, labelled by scenario and step.
+- A builder never sees them: the builder's tools carry no load fields.
+
+The verdict follows the steps. The run is `failed` if the broker blocked a publisher, a session
+could not be set up (the ramp stops there and later steps read `not_run`), no step was
+comfortable, or a `Must Sustain` step was not. It is `degraded` if everything held but the broker
+restarted during a step. Otherwise it `passed`: a ramp that crosses your limit at its top step has
+**measured** the limit, which is not a failure. A step is comfortable only when its p95, its error
+rate and its delivered ratio meet what you declared, nothing was blocked, and the load generator
+was not the limit. Above about 1000 messages a second, `validate-scenario` warns that the
+execution plane's pod, not the broker, may be what is measured; such a step is flagged
+`generator_limited` and is never comfortable.
+
+⚠️ **A load result is only as good as the environment it names.** Write down, next to the numbers,
+the environment (which cluster, whether it is the live system or a lab copy), its resources
+(replicas, CPU and memory requests and limits, the broker's own limits), the load (rate, sessions,
+message size, duration) and the build under test. Two results from differently sized environments
+are not comparable.
 
 ## Reading a red
 
@@ -332,9 +528,14 @@ argus get-dashboard-url
 argus get-report
 ```
 
-`get-sagas` and `tail-logs` both refuse outright without `--correlation-id` — there is no
-"show me everything" mode, deliberately: triage is scoped to one scenario's own trail, not a
-grep across the whole run.
+`get-sagas` and `tail-logs` (the `get_sagas` and `get_tail_logs` tools) both refuse outright
+without `--correlation-id` — there is no "show me everything" mode, deliberately: triage is scoped
+to one scenario's own trail, not a grep across the whole run.
+
+From v0.3.52 the id must be a **whole** correlation id, exactly as `get-report` shows it:
+`tr-<run_id>-<scenario_id>-<8 hex>`. A prefix, a fragment or a pattern (`tr-`, for instance) is
+refused, naming the shape it expects. Earlier versions took any text and matched it as a
+substring, so a fragment could read every run in the window. This holds for every role.
 
 Read `failure.observed` before changing anything. A red is the system telling you something —
 never weaken an assertion to make it go green; the only honest reason to drop a check is proof
@@ -348,4 +549,5 @@ anything.
 ## Related
 
 - [What Argus is](/argus) — the holdout, the two planes, the two modes
+- [Set up a tester and a builder](/argus-session-setup) — the order, and the tokens each holds
 - [Builder guide](/argus-builder-guide) — the other side of the holdout

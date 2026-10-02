@@ -69,9 +69,34 @@ verdict after it, and the moment the tests are revealed. The result is a **certi
 third party checks against the chain themselves, with no Argus account and without seeing a
 single test. See **[Ledger and certificates](/argus-ledger)**.
 
+## What changed recently
+
+These pages describe Argus v0.3.52. Each note below links to the section that has the detail.
+
+- **AMQP load testing is open** (v0.3.52): a load run against a broker you list under
+  `load_allowed_targets`. See [Load testing](/argus-tester-guide#load-testing).
+- **`## LOAD` durations work again.** From v0.3.37 to v0.3.51 every load duration was ignored, so
+  load numbers taken in that range are not measured: re-run them on v0.3.52. See
+  [Load numbers taken before v0.3.52](/argus-tester-guide#load-numbers-taken-before-v0352).
+- **Log queries take a whole correlation id** (v0.3.52), for every role. See
+  [Reading a red](/argus-tester-guide#reading-a-red) and the
+  [Builder guide](/argus-builder-guide#triage-blind).
+- **Your own dashboard, several test targets, summary numbers** (v0.3.52): see
+  [Configuring what your environment shows](/argus-tester-guide#configuring-what-your-environment-shows).
+- **`argus preflight` checks Docker and host ports** on a Docker machine, and `--obs none`
+  renders no observability (v0.3.52): see
+  [Installing into a Kubernetes cluster](/argus-tester-guide#installing-into-a-kubernetes-cluster)
+  and the [Quickstart](/argus-quickstart#4-prove-read-access-before-wiring-anything-else).
+- **Reports and checks** (v0.3.51 and v0.3.52): `observed_status`, an exact HTTP `equals`, and the
+  failed body check named for the tester. See [Running](/argus-tester-guide#running).
+- **Install the CLI from a release** and the `argus doctor` fixes: see the
+  [Quickstart](/argus-quickstart#1-get-the-argus-cli).
+
 ## Where to go next
 
-- **[Argus quickstart](/argus-quickstart)** — the two kinds of token, and the first read-only
+- **[Set up a tester and a builder](/argus-session-setup)** — the order to set the two sessions up
+  in, and the tokens each one holds.
+- **[Argus quickstart](/argus-quickstart)** — the CLI, the credentials, and the first read-only
   command to prove your setup before you trust anything else.
 - **[Tester guide](/argus-tester-guide)** — write a scenario, run it, monitor a live system, and
   read a red.

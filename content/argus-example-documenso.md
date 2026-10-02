@@ -38,7 +38,7 @@ You need about 45 minutes, most of it the Documenso image build. Check these fir
 | Docker Desktop, running | Documenso and Argus both run as containers | `docker info` answers |
 | bash 4.4 or newer, first on PATH | macOS ships bash 3.2; onboarding stops on it | `bash --version` |
 | Claude Code | the two Argus agents run in it | `claude --version` |
-| Read access to the Argus execution-plane image | the image is private; your control plane's operator gives you the image and access | `docker login` to its registry, then Step 3 |
+| Read access to the Argus execution-plane image | the image is private; your control plane's operator gives you the image and access. Name it by its release tag `v<version>-slim` (the version your control plane recommends), never the plain `:slim` | `docker login` to its registry, then Step 3 |
 | An account on your Argus control plane | onboarding signs you in through a browser | open the control plane and sign in |
 | Host ports 3000, 9095, 9765 and 3200 free | Argus's shared Grafana (3000) and Prometheus (9095), the Argus router (9765), and Documenso (3200) | `lsof -nP -iTCP:3000 -iTCP:9095 -iTCP:9765 -iTCP:3200 -sTCP:LISTEN` prints nothing, or only the Argus router on 9765 |
 
@@ -456,13 +456,15 @@ know which one it was.
 
 ## Troubleshooting
 
-Every row below happened during our run, on 2026-10-01 or 2026-10-02, with Argus 0.3.50.
+Every row below happened during our run, on 2026-10-01 or 2026-10-02, with Argus 0.3.50. The
+three rows about Ctrl-C, the deprecation notice and `argus doctor` happened on a re-run with
+0.3.51 on a Mac, and are fixed in v0.3.52.
 
 | What you see | Cause | Fix |
 |---|---|---|
 | Onboarding fails early with a bash syntax error | macOS's own bash 3.2 ran the script | `export PATH="/opt/homebrew/bin:$PATH"; exec bash`, then run it again. From v0.3.51 onboarding checks the bash version first and prints this fix. |
 | `docker pull` of the Argus image answers 403 | your registry account cannot read the private image yet | ask your control plane's operator for read access |
-| A raw Docker error that port 3000 or 9095 is taken | another Grafana or Prometheus stack is running (in our case an old stack from another tool and an earlier Argus project) | find it with `lsof -nP -iTCP:3000 -iTCP:9095 -sTCP:LISTEN` and stop it with `docker compose -p <project> stop` |
+| A raw Docker error that port 3000 or 9095 is taken | another Grafana or Prometheus stack is running (in our case an old stack from another tool and an earlier Argus project) | find it with `lsof -nP -iTCP:3000 -iTCP:9095 -sTCP:LISTEN` and stop it with `docker compose -p <project> stop`. From v0.3.52, `argus preflight` (leave out `--kube-context`) and onboarding check Docker and these host ports first and name the holder |
 | The agents fail with "unrecognized router token" | an older router from another tool holds 127.0.0.1:9765 | stop that container; onboarding starts its own router as the compose project `argus-router`. From v0.3.51 onboarding says when another process answers on that port. |
 | A container named `argus-router` clashes during onboarding | that router was started by hand with `docker run` | `docker rm -f argus-router`; onboarding starts a fresh one |
 | Every scenario returns 404 | the scenario path lacks `/api/v2`: Argus keeps only scheme://host:port of `base_url` | start each path with `${INGESTION_URL}/api/v2/` |
@@ -470,6 +472,9 @@ Every row below happened during our run, on 2026-10-01 or 2026-10-02, with Argus
 | Documenso's own compose file fails | it needs SMTP settings and a certificate mounted from the host | use the compose file from Step 1 |
 | The log check in Step 5 prints 0 | the running image lacks the request-ID patch | rebuild the image from Step 1 and run `docker compose up -d` again |
 | The test agent says status was "never checked" | it read `assertions_enforced_count: 0` | that count leaves out the status check; the planted-status scenario in Step 6 proves the check works |
+| Onboarding says the bash version is too old right after you pressed Ctrl-C, on a bash that is new enough | before v0.3.52 a Ctrl-C was reported as the bash version | none needed: from v0.3.52 the message says the transcript writer was already gone (an interrupt or an early exit) and the transcript may be short |
+| `ARGUS_AUTHOR_TOKEN is deprecated` prints three times in one onboarding | each process onboarding starts printed the notice once | none needed: from v0.3.52 it prints once per onboarding |
+| `argus doctor` fails because no `--scenarios` folder was given | before v0.3.52 a missing default folder was a failure | from v0.3.52 it is a warning; pass `--scenarios test-agent/scenarios` to check your kit's folder |
 | The validator refuses `>=`, `>`, `<` or `<=` | number comparisons do not work in plain HTTP scenarios | use a pattern instead, as in Step 6 |
 
 One thing we have **not** tested: in Step 1, `NEXT_PUBLIC_WEBAPP_URL` says port 3100, but Documenso

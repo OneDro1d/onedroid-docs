@@ -9,6 +9,10 @@ order: 33
 This is for the agent — or person — who owns the system under test: you fix what's red and
 re-run the tests to check your own fix. [What Argus is](/argus) covers why this role is kept
 separate from the tester's; this page is what that separation means for you in practice.
+You are the second session set up for an app: the tester goes first, and hands you a runner id
+once its schedule is on. [Set up a tester and a builder](/argus-session-setup) has that order and
+the token table; the steps for your side are under
+[Set up the builder](/argus-session-setup#set-up-the-builder).
 
 ## Read this first: the holdout
 
@@ -39,9 +43,10 @@ If you were given a runner id, you are on the first path.
 
 ### Connect your session
 
-1. Your operator generates a **builder token** in the Argus app (**Tokens** → *Generate builder
-   token*, in your app's workspace) and puts it in a file in your environment. Never paste a token
-   into a chat.
+1. Your operator generates a **builder token** in the Argus app (**Settings → API Tokens** → *Generate builder
+   token*, in your app's workspace) and puts it in a file in your environment. It is not an
+   **author token**, and not the execution plane's own `ARGUS_RUNNER_TOKEN`
+   ([the token table](/argus-session-setup#the-tokens)). Never paste a token into a chat.
 2. Add the control plane's MCP endpoint to your session with that token as a bearer header.
 3. Check it: your tool list should show **only** `runner__*` tools. If it shows `author_*` tools,
    the token is the wrong kind: stop and say so.
@@ -108,7 +113,10 @@ plus the authoring commands; you have exactly these.
 holdout strips for you, so on your reports it is simply absent, not null or empty.)
 
 `assertions_enforced` tells you what was actually checked — read it, not just the pass/fail —
-and `failure.observed` is the real response your system gave. Work from that. You will never
+and `failure.observed` is the real response your system gave. From v0.3.51 the scenario also
+carries `observed_status`, the HTTP status your system returned (and `observed_status_codes` when
+several requests fired). A status-only check has an `assertions_enforced` count of `0`; that is
+not "nothing was checked". Work from that. You will never
 see the line that says what should have happened; the fact that `status=200` was checked, and
 your system returned `503`, is the whole of what you need to know it's wrong.
 
@@ -121,6 +129,12 @@ argus get-sagas --correlation-id <the correlation id from the failing scenario>
 argus tail-logs --correlation-id <same id>
 argus get-dashboard-url
 ```
+
+`get-sagas` and `tail-logs` take a **whole** correlation id (v0.3.52 or later): the
+`tr-<run_id>-<scenario_id>-<8 hex>` id exactly as `get-report` gives it. A prefix, a fragment or a
+pattern is refused, and the refusal names the shape it expects. Before v0.3.52 these calls took
+any text and matched it as a substring, so a fragment such as `tr-` could read the log lines of
+every run in the window, including runs whose ids you are never given. An id is not a pattern.
 
 A saga-first read tells you what your system believed it did; the logs tell you what actually
 happened around it. Triage lands on one of a small set of verdicts — a real defect in your
@@ -144,4 +158,5 @@ config or re-enroll anything; just run again.
 ## Related
 
 - [What Argus is](/argus) — the holdout, the two planes, the two modes
+- [Set up a tester and a builder](/argus-session-setup) — the order, and the tokens each holds
 - [Tester guide](/argus-tester-guide) — the other side of the holdout

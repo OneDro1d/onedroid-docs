@@ -83,8 +83,9 @@ be treated as leaked.
 3. **Start the session with a brief** (template below). From there the tester follows the
    [Tester guide](/argus-tester-guide): enroll the execution plane, write the checks, run them
    once by hand, then turn on a `monitor` schedule.
-4. **When the schedule is on, mint a runner id** for the instance
-   (`argus runner-id mint --instance-id <instance-id>`) and give it to the builder. Never give the
+4. **When the schedule is on, mint a runner id** for the instance and give it to the builder:
+   in the Argus app, **Settings → Environments**, the instance's **runner id** row, **Mint runner id**
+   (or `argus runner-id mint --instance-id <instance-id>`). Never give the
    builder files, check text or the author token.
 
 ## Set up the builder

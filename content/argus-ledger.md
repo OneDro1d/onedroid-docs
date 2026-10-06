@@ -62,6 +62,12 @@ public chain.
 
 Open **Proof** in the sidebar of your workspace (the page that asks *Can I prove it?*; it was called Ledger before October 2026).
 
+**Certified releases first (v0.3.53 or later).** The top of the page shows one card for each
+certification, across all your environments: the release, its result and its anchors. Final runs
+come first, newest first. A **Certification** page for one environment lists each commitment with
+its result, its final run, every anchor and the certificate you can download. The checks
+themselves stay hidden until the author reveals them.
+
 **What gets written to each chain.** One row per chain, two switches:
 
 - **Certification record**: the commitment, the sealed set, the verdict and the reveal of every
@@ -76,7 +82,10 @@ begins. An **Every run** change applies from the next run that finishes.
 **Every anchor in this workspace.** Newest first: when, which chain, what it is (*Commitment v1*,
 *Scenario set sealed v2*, *Verdict v3*, *Reveal*, *Run result*), which run or commitment it
 anchors, where it sits (block, or Bitcoin state), and the transaction hash with a link to look at
-it. A run id opens that run.
+it. A run id opens that run. From v0.3.53 you can filter the list by kind, chain, environment and
+a date range (in UTC days), and search it by run id, commitment id, transaction hash or block.
+The **Runs** page has an **Anchored** column and a filter with four choices: all, anchored, not
+anchored and certification runs.
 
 **Runs that could not be anchored.** This section appears only when there is something in it: a
 run that finished but whose result did not land on every chain it was meant for, with the reason

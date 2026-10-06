@@ -214,6 +214,16 @@ With `--config`, `doctor` also prints the warnings `validate-config` prints (a `
 path, for example) as `validate-config warns: …`, and counts them as a warning rather than a pass
 (v0.3.52 or later; before it, `doctor` reported such a config as fine).
 
+Three more things changed in v0.3.53:
+
+- A working cloud tester no longer fails. If `ARGUS_TOKEN` holds a control-plane token and no
+  local role map is set, `local-hats` is a warning, not a failure.
+- `sut-reachable` tells a fresh "unknown" from a stale one. Fresh: the executor's probe ran and
+  returned no verdict, which is neither a pass nor a failure. Stale: the last reading is older
+  than 3 minutes, so it says nothing about now and the fix is to check the executor is running.
+- The credential line says when `doctor` used a renewed session token: that the control plane
+  accepted the session with the renewed token.
+
 On a tester machine, use `argus doctor --tester` instead (v0.3.47 or later). It prints one line
 per onboarding phase, each PASS, FAIL or SKIP: the token, the tools it reaches, the workspace,
 the cluster, the instance namespace, whether every image pull Secret the executor's Deployment

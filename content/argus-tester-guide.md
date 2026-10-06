@@ -131,11 +131,12 @@ Your control plane's operator gives you the execution-plane image. Name it by it
 installed from it has a version nobody can state, and the version checks and the Update button
 cannot rank it.
 
-Three render options decide what else lands in your cluster:
+These render options decide what else lands in your cluster:
 
 | Option | Default | What it does |
 |---|---|---|
-| `--obs <mode>` | `bundled` | Where the execution plane's logs and metrics go: `bundled`, `adopt`, `export`, `shared` or `none`. `none` renders no observability objects at all, for an environment that already has its own; pair it with [your own dashboard link](#your-own-dashboard-link-v0352-or-later). On the Docker (compose) path `--obs none` also starts no shared observability stack (v0.3.52 or later). Pass the same `--obs` to `argus preflight`. |
+| `--obs <mode>` | `bundled` | Where the execution plane's logs and metrics go: `bundled`, `adopt`, `export`, `shared` or `none`. `none` renders no observability objects at all, for an environment that already has its own; pair it with [your own dashboard link](#your-own-dashboard-link-v0352-or-later). On the Docker (compose) path `--obs none` also starts no shared observability stack (v0.3.52 or later), and from v0.3.62 it starts no Loki, promtail or Pushgateway for the instance either, and onboarding does not ask for `observability.grafana.public_url`. Pass the same `--obs` to `argus preflight`. |
+| `--obs-storage-class <name>` | the tier's default | The storage class for the volumes that keep the execution plane's logs and metrics (v0.3.62 or later). See [Storage for logs and metrics](#storage-for-logs-and-metrics-v0362-or-later). |
 | `--podmonitor auto\|on\|off` | `auto` | The PodMonitor object in `obs.yaml`. `auto` includes it only if the cluster has the Prometheus Operator's PodMonitor type (it checks, read-only, through `--kube-context`). Use `off` on a cluster without the Prometheus Operator, where `kubectl create` would otherwise fail on that object. |
 | `--collect-sut-logs` | off | Also collect your system's own pod logs. Off by default, because those logs may carry user or agent content. When you turn it on, the render names the namespace it will read. |
 
@@ -202,6 +203,33 @@ It never removes anything, never touches a Secret's value, and leaves the execut
 A change that restarts the executor pod is announced with a `=> POD RESTART:` line. With one
 replica the executor has no pod while it rolls, and a run in flight is cut.
 
+### Storage for logs and metrics (v0.3.62 or later)
+
+On Kubernetes, the Loki that holds the execution plane's logs keeps them on a volume called
+`loki-data` (5Gi), and each Pushgateway saves its metrics to a volume called `pushgateway-data`
+(1Gi). A pod that is deleted or recreated no longer takes the logs and metrics with it. The
+Docker (compose) Loki has a named volume too. Run reports in the control plane were never
+affected: they do not live in the pod.
+
+- **The class.** On `--tier aks` the volumes use `managed-csi`. On every other tier they use your
+  cluster's default storage class. `--obs-storage-class <name>` picks another one. It is a
+  separate flag from `--storage-class`, which is the results volume. The flag works on
+  `onboard.sh`, `argus up`, `argus render-k8s` and `argus render-obs-shared`. On the Docker tier
+  there are no storage classes, and onboarding says the flag is ignored.
+- **A class that is missing.** Onboarding refuses before it applies anything when the class you
+  named is not in the cluster, or when the cluster has no default class. It lists the classes the
+  cluster does have.
+- **An instance you already run.** Run `onboard.sh` again, or `argus upgrade --apply`, to add the
+  volumes. `argus update` does not add them. The change from the old in-pod storage loses the
+  logs and metrics held in the pod at that moment, once.
+- **A shared Loki that already exists** is not changed by onboarding again, and onboarding prints
+  a note. To move it onto a volume, delete its Deployment and onboard again. That drops every
+  tenant's logs once.
+- **You cannot change a volume's class or size after it is bound.** Onboarding again with a
+  different class is refused, and the message names both classes and the two ways out. The
+  Pushgateway saves about once a minute, so a node crash can lose up to a minute of metrics.
+- **Teardown** of an instance never deletes anything outside the instance's own namespace.
+
 ## Configuring what your environment shows
 
 Three optional blocks in `argus-config.yaml` change what the Argus app shows for your
@@ -209,7 +237,8 @@ environment. They need an execution plane on v0.3.52 or later: an older one igno
 Argus app shows nothing for them (one implicit test target, no summary numbers).
 `observability.dashboard_link` sits under `observability:`. `test_targets` and `summary_metrics`
 are **top-level** keys, beside `targets:`. Never put either inside `targets:`: that block is
-checked strictly, and an older execution plane would refuse the whole config.
+checked strictly, and an older execution plane would refuse the whole config. A fourth setting,
+the Pushgateway retention, is the last subsection and needs v0.3.53.
 
 ### Your own dashboard link (v0.3.52 or later)
 
@@ -241,8 +270,9 @@ its lab copy. Name them, and every run is stamped with the targets it tested:
 test_targets:
   - name: live                      # lower-case, unique; "unassigned" is reserved
     label: shop live
-    namespace: shop                 # shown only; never used to dial anything
+    namespace: shop                 # never used to dial anything; a load run reads its environment from it
     match: { scenario_prefixes: [NHB-], tags: [heartbeat] }
+    load_test: never                # optional (v0.3.60 or later): never put this target under load
   - name: lab
     label: shop lab
     namespace: shop-lab
@@ -256,6 +286,29 @@ its tags; otherwise it is `unassigned`. Targets come from your declaration and t
 checks that ran, never from anything your system says. A run is stamped when it ends; changing the
 declaration later does not re-stamp past runs. With no `test_targets` there is one implicit target,
 as before. This is not the connection `targets:` block (http, database, message_broker).
+
+**A target that must never be loaded (v0.3.60 or later).** Add `load_test: never` to the entry of
+a system you must not load, for example a live message bus. It is a guard, not a label:
+
+- `argus validate-config` reports an error for a load check that belongs to that target. A load
+  check is an AMQP Load check, or any check with a `## LOAD` section.
+- The executor refuses to fire such a check, before it opens any connection. The check ends
+  `error`, and its `Observed` line says `refused before firing` and `Nothing was sent.`
+- The Capacity page says "<target> is not load tested, by declaration." instead of "not measured
+  yet", and the Overview no longer lists the target as a gap.
+- `never` is the only accepted value. Any other value is refused by name.
+
+⚠️ **Upgrade the executor before you add the key.** An executor at v0.3.59 or older refuses the
+whole config with `unknown key "load_test" under test_targets`. Take the key out again before you
+roll an executor back.
+
+**A target's own namespace (v0.3.60 or later).** A load run records the environment it ran
+against. When its load checks belong to targets that declare a `namespace`, it reads that
+namespace, not only the instance's one namespace. With no `namespace` declared, nothing changes.
+With load checks in more than one namespace, nothing is read, and the reason says why: run one
+target's load checks per run. The executor needs the same read Role in each target's namespace
+that it has in the instance's namespace. Argus does not grant it. Render it with `argus
+render-k8s --sut-namespace <that namespace> --emit-sut-access-role` and apply it yourself.
 
 ### Summary numbers from your environment's own metrics (v0.3.52 or later)
 
@@ -283,6 +336,25 @@ is reported as an error with no value, never as `0`, so "no agents" cannot be mi
 not ask". A value older than three intervals is marked stale. Only an author sees these numbers;
 a builder token cannot read them. `argus validate-config` refuses a mistyped key inside the block
 by name.
+
+### How long a run's metrics are kept (v0.3.53 or later)
+
+Every run pushes its `argus_*` metrics to the Pushgateway as its own group. The Pushgateway never
+forgets a group by itself, so it grew without bound. From v0.3.53 the executor deletes its own
+instance's older run groups after a retention window. It never deletes another instance's groups
+or the run it just pushed. Prometheus keeps what it already scraped.
+
+```yaml
+observability:
+  pushgateway:
+    url: http://pushgateway:9091
+    group_retention: 15m             # optional; a Go duration, 1m to 720h; 0 keeps every group for ever
+```
+
+Leave it out and the window is `15m`. A negative, unparseable or out-of-range value, or a
+mistyped key under `observability.pushgateway`, is refused when the config loads. Keep the value
+well above your Prometheus scrape interval. An older executor ignores the key and keeps every
+group.
 
 ## Writing a scenario
 
@@ -329,11 +401,47 @@ In an HTTP body check, `equals` is exact from v0.3.51: `currentPage equals 1` no
 `10`, and an operator Argus does not know fails the check instead of passing it. On v0.3.50 and
 earlier `equals` was checked as "contains".
 
+**Values a check uses (v0.3.62 or later).**
+
+- **`${INGESTION_URL}` in a chain `http` step.** A step whose `url` starts with `${INGESTION_URL}`
+  takes the scheme, host and port of `targets.http.base_url`. The path of `base_url` is not
+  added. The marker wins over an environment variable of the same name. Any other `${NAME}` in a
+  chain `url` that has no value fails the step at preflight and names it. A chain cannot pick a
+  named `http_targets` entry, so for another host write the full url.
+- **`check_env` declares the names a check needs.** A password that appears only inside a check
+  (an HTTP body, a step header) is not in any field Argus scans for secrets. List its name in a
+  **top-level** list in `argus-config.yaml`, beside `targets:` and never under it:
+
+  ```yaml
+  check_env:
+    - SOME_PASSWORD        # the check writes ${SOME_PASSWORD}; the value stays in your .env
+  ```
+
+  Names only, never values: an entry that is not a variable name is refused without being printed
+  back. Names that would change how the executor itself runs are refused too (`ARGUS_*`, `LD_*`,
+  `KUBERNETES_*`, `PATH`, the proxy variables and others). You can list up to 64. The names reach
+  the executor with the credentials, and `argus secrets set --key SOME_PASSWORD` rotates a value
+  later. A value you declare is removed from recorded outputs the way a credential is. A name that
+  is missing or empty in your `.env` stops onboarding and fails `validate-config`. ⚠️ `check_env`
+  decides what is **delivered**, not what a check may use: any name set in the executor's
+  environment is substituted into a check, declared or not. An executor older than v0.3.62
+  ignores the key, so update the executor first, or `${SOME_PASSWORD}` reaches your system as
+  literal text.
+- **A value filled into a chain spec is data.** A quote, a backslash or a newline in it arrives
+  byte for byte and cannot add a key to the request.
+
 Author with the dedicated tools, not by hand-editing files on disk: `propose-scenario` turns
 plain English into a draft, `validate-scenario --file <draft.md>` checks its shape before
 anything is written, and `write-scenario --file <draft.md> --path <ID>-<slug>.md` validates
 again and commits it to the catalog — the catalog, not a local folder, is the source of truth
 for what your scenario set *is*.
+
+`argus validate-config --scenarios <dir>` also reports every rule the scenario writers enforce
+(v0.3.59 or later). It used to apply two of them, so it said `valid: true` for a file the
+control plane then refused on write, for example `## TIMEOUT 60s` on an HTTP Ingestion check,
+where the ceiling is 30 s. Each such problem is now a warning that names the file and the line
+and says a scenario write will refuse the file. `valid` does not change, and a problem that is
+already an error is not repeated as a warning.
 
 ```bash
 argus list-scenarios
@@ -374,8 +482,12 @@ carries it, because the bullet holds the expected value.
 When a step in a chain fails on its claims, it carries `failed_claims` (v0.3.49 or later):
 each claim that did not hold, as written, with the value the system showed on the step's last
 attempt. Only an author sees it. A numeric claim may compare against a value an earlier step
-saved (`body has messages > ${saved.n}`), and `save` accepts a regex for a text body. The
-`scenario-author` skill that ships with Argus has the details.
+saved (`body has messages > ${saved.n}`), and `save` accepts a regex for a text body. From v0.3.54
+a failed numeric claim that compares against a saved value shows the number the field held in
+`failed_claims[].observed`. Before, it showed the placeholder, and a saved `5` could turn an
+observed `15` into `1${saved.acks}`. The verdict was always right. Every other saved value is
+still hidden from reports, and a claim that is not numeric (such as `contains ${saved.token}`)
+still shows the placeholder. The `scenario-author` skill that ships with Argus has the details.
 
 For a run on an enrolled instance, the `author_get_report` MCP tool reads that run's full report
 from the execution plane: every scenario's status, and on a fail both the expected and the
@@ -383,6 +495,17 @@ observed value. It takes `instance_id` and `run_id`, and it needs an author toke
 runs that are still in progress or finished but not final; a **final** run has its own sealed
 document, which `author_get_reveal` reads. An execution plane on v0.3.39 or older does not have
 it and answers `unknown relayed verb "get_full_report"`: update the execution plane first.
+
+**Say what a hand-started run is for (v0.3.53 or later).** `author_request_run` takes three
+optional arguments:
+
+| Argument | Meaning |
+|---|---|
+| `intent` | `"experiment"` (the default for a run you start by hand) or `"certification"`. `certification` is implied by, and the only value allowed with, mode `final`, `rehearsal` or `scheduled`, and is refused with mode `build`. `"monitor"` is refused: monitor runs come only from a schedule. |
+| `expect` | `"fail"` or `"pass"`. Only with intent `experiment`. `"fail"` marks a deliberate test: the run is shown as deliberate when it fails and as an unexpected pass when it passes. |
+| `note` | why you are running it, in your own words, at most 500 characters. You see it on the run page and in `author_get_run_status`. It is never shown to a builder and never put in an alert. |
+
+A deliberate failing test is no longer shown as a problem.
 
 A scenario's `## TIMEOUT` is enforced while it runs: each request (each step, in a chain) that
 takes longer than the timeout fails, and the failure names the timeout. A check that passed
@@ -468,6 +591,29 @@ List a lab or a dedicated test broker, never a live one. A listed entry whose `u
 `management_url` has a `prod`, `production`, `prd` or `shared` segment is refused when the config
 loads. Like `test_targets`, the key goes beside `targets:` and not inside it.
 
+**A least-privilege load login (v0.3.53 or later).** Each session declares and binds its own queue,
+publishes to an exchange, and reads from its queue. On the broker's entry under
+`targets.message_broker_targets`, `exchanges.load` names the exchange (default `amq.direct`; it must
+already exist) and `queues.load` sets the prefix of the per-session queue names (default
+`argus-load`). The login needs configure, write and read on queues that match `^<prefix>-`, and
+write and read on the exchange. If your load login is limited to a name pattern such as
+`^perf\..*`, choose names inside it:
+
+```yaml
+targets:
+  message_broker_targets:
+    shop-lab:
+      exchanges:
+        load: perf.x
+      queues:
+        load: perf.argus
+```
+
+Without them every session is refused at setup with `403 ACCESS_REFUSED` and the run reports
+`setup_failed` for the step. Existing configs keep working: with no `queues.load` the prefix stays
+`argus-load`. `queues.load` only takes effect with a v0.3.53 or later executor, so update the
+executor before you add it.
+
 A load scenario then names that broker with `**Target**: <name>`, uses the layer `AMQP Load`, and
 declares its profile in `## LOAD`: `**Steps**` (session counts, one run each, at most 12 steps of 1
 to 2000 sessions), `**Step Duration Seconds**`, and the thresholds `**Target P95 Ms**` and
@@ -509,7 +655,23 @@ restarted during a step. Otherwise it `passed`: a ramp that crosses your limit a
 rate and its delivered ratio meet what you declared, nothing was blocked, and the load generator
 was not the limit. Above about 1000 messages a second, `validate-scenario` warns that the
 execution plane's pod, not the broker, may be what is measured; such a step is flagged
-`generator_limited` and is never comfortable.
+`generator_limited` and is never comfortable. A step the broker blocked is not flagged
+`generator_limited` (v0.3.59 or later): a block stalls the publishers, so a blocked step used to
+read as if the load generator had been too slow. Steps stored before then keep the flag they were
+stored with.
+
+**A blocked broker (v0.3.55 or later).** When the broker blocks publishers, for example with a
+memory or disk alarm, the step reads `blocked` with the broker's reason, and the run fails with
+`blocked by broker: <reason>` and a line saying the broker held the publisher blocked at step N
+of M and the ramp stopped there. On v0.3.54 and older, a blocked broker could read as `error`,
+"jmeter run error: … backstop …", as if Argus had broken. If the executor had to stop JMeter, a
+note follows the broker's answer. The note should not appear from v0.3.56, which ends a blocked
+step when the step ends: if you still see it, report the run id. The session queues of a blocked
+step are removed when they expire, not at teardown.
+
+Argus latencies read about 1 ms higher than RabbitMQ PerfTest at low load, because JMeter
+schedules its threads inside the executor pod. Compare throughput directly, and compare latency
+against Argus's own baseline.
 
 ⚠️ **A load result is only as good as the environment it names.** Write down, next to the numbers,
 the environment (which cluster, whether it is the live system or a lab copy), its resources
@@ -546,8 +708,41 @@ scenario itself.
 look at how long it took. A scenario that "passed" with no measurable duration didn't check
 anything.
 
+## What the Argus app shows
+
+From v0.3.53 the Argus app has five places in its sidebar, each named by the question it answers.
+**Environments**, **API Tokens**, **My workspaces** and **Onboarding & setup** are in the
+**Settings** menu at the top right. The workspace switcher is at the top of the sidebar. The app
+has a light and a dark theme and a phone layout, and a search box that finds run ids, commitment
+ids and transaction hashes.
+
+| Place | Question | What it shows |
+|---|---|---|
+| **Overview** | Is it OK? | One verdict and a tile per system. Health comes from **monitor** runs only: a run you start by hand never turns it red, a monitor that stopped firing turns it amber (late), and a system no monitor has measured reads "not measured", never green. Also **Needs a person**, the capacity card and the latest certified release. |
+| **Capacity** | How much load can it take? | The measured limit of the latest completed load run for each system and target. |
+| **Runs** | What happened? | Every run, on a timeline and in a table. |
+| **Checks** | What is tested? | Your scenarios. |
+| **Proof** | Can I prove it? | Certified releases first, then every anchor. See [Ledger and certificates](/argus-ledger). |
+
+- **Needs a person** lists what Argus works out by itself and also what you file. File an item with
+  `author_file_attention` (`instance_id`, `severity` of `high`, `med` or `low`, `title`, `body`,
+  `next_step`, and optionally `owner`, `ref` and an in-app `link`). Close it with
+  `author_close_attention` and the `item_id` the first call returned. Items show to the authors of
+  the workspace only. A builder never sees them.
+- **One run drawer.** A run id, a bar on the timeline or a table row opens the run beside the page,
+  on Runs and Overview.
+- **Older runs.** The Runs timeline reaches runs older than the newest 500, and takes a date range.
+  Runs has an **Anchored** column and filter. Runs, Checks and Trends can be filtered by test target.
+- **Environments** shows one card per declared test target. A target's health comes from its
+  scheduled monitor runs only.
+- **Capacity details.** A run's page shows a **Load steps** table. A value the step did not measure
+  reads "not measured", never 0. The Capacity page shows the largest step that was comfortable with
+  every smaller step comfortable too, with the date and the version it was measured on.
+- **A runner id** is minted from **Settings → Environments**.
+
 ## Related
 
 - [What Argus is](/argus) — the holdout, the two planes, the two modes
 - [Set up a tester and a builder](/argus-session-setup) — the order, and the tokens each holds
 - [Builder guide](/argus-builder-guide) — the other side of the holdout
+- [Comparing systems](/argus-compare): one sealed set of checks against an old system and its rewrite

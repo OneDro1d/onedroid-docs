@@ -22,6 +22,9 @@ Everything you author and run is scoped to a **workspace** — one per system un
 common case. Your **author token** (`ARGUS_CP_AUTHOR_TOKEN`) is bound to it: `argus cloud-list-workspaces` shows what you can
 reach, and `argus cloud-switch-workspace` changes which one later commands act on.
 
+A token bound to one workspace acts only inside that workspace. It cannot onboard or tear down an
+instance. For that, use the workspace owner's sign-in or a token that covers all workspaces.
+
 ## Enrolling an instance
 
 To see one real app taken through onboarding from start to finish, with its config and scenarios,
@@ -46,6 +49,23 @@ argus cloud-executor-status --control-plane "$ARGUS_CP_URL" --instance-id <insta
 
 `"registered": true` alone is not enough — an instance can register once and then be refused on
 every later poll. Want both to be true before you trust anything else about the instance.
+
+### Onboarding notes (v0.3.63 or later)
+
+- **Credential files are created 0600.** On the Docker (compose) path, `deploy/compose/env.<id>`,
+  the secrets file and the identity key file used to be readable by every user on the machine. They
+  are now created readable by you only, and tightened where they already exist. A kit you onboarded
+  earlier is fixed only when it onboards again. Until then run
+  `chmod 600 <kit>/deploy/compose/env.*`.
+- **A workspace-bound token is refused with a plain message.** The first refused call says that
+  such a token cannot onboard or tear down. Use the owner's sign-in or a token that covers all
+  workspaces. See [Your workspace](#your-workspace).
+- **Docker has no address range left (v0.3.64 or later).** Each Docker (compose) instance has its
+  own network. At about the 31st on one machine, Docker answers "all predefined address pools have
+  been fully subnetted". Onboarding now names that as the cause. It is not a problem with your
+  system or your files. To free a range, run `docker network prune` (it removes networks no
+  container uses), or give Docker a wider `default-address-pools` in its `daemon.json`, restart
+  Docker and onboard again.
 
 ### Installing into a Kubernetes cluster
 
@@ -310,6 +330,22 @@ target's load checks per run. The executor needs the same read Role in each targ
 that it has in the instance's namespace. Argus does not grant it. Render it with `argus
 render-k8s --sut-namespace <that namespace> --emit-sut-access-role` and apply it yourself.
 
+**A target that runs in no cluster (v0.3.63 or later).** Add `outside_cluster: true` to the entry of
+a system that runs in no cluster, for example a hosted service:
+
+```yaml
+test_targets:
+  - name: hosted
+    label: hosted API
+    outside_cluster: true           # optional (v0.3.63 or later); cannot be combined with namespace
+    match: { scenario_prefixes: [HOS-] }
+```
+
+A run whose checks all belong to such targets asks Kubernetes nothing and says so. Before, it
+reported `environment.captured: false` with a `forbidden` error. It cannot be combined with
+`namespace` on the same target. ⚠️ **Upgrade the executor before you add the key.** An executor older
+than v0.3.63 refuses the whole config.
+
 ### Summary numbers from your environment's own metrics (v0.3.52 or later)
 
 A few named numbers, such as agents connected now or broker headroom, can reach the Argus app from
@@ -489,6 +525,50 @@ observed `15` into `1${saved.acks}`. The verdict was always right. Every other s
 still hidden from reports, and a claim that is not numeric (such as `contains ${saved.token}`)
 still shows the placeholder. The `scenario-author` skill that ships with Argus has the details.
 
+### Connections that must fail (v0.3.64 or later)
+
+`- step <name>: unreachable` is a claim for a connection that must not work, such as a
+NetworkPolicy deny or a closed port. It passes only when no HTTP response arrived because the
+connection could not be made: a connect timeout, a refused connection, a reset at the connect, or no
+route. It sends one request, waits at most 5 seconds and never polls.
+
+Any HTTP status fails it. A 403, 404 or 503 means the network let the request through. A DNS "no such
+host" fails it too, and so does any failure after a connection was made, including a reset inside an
+https target's TLS handshake. Rules:
+
+- It stands alone on its step. It is refused when combined with another claim on the same step.
+- It is an `http`-step claim only.
+- It is judged only after an earlier positive step of the same chain passed. Otherwise the step reads
+  `not-measured`, so a dead target cannot pass every negative check. A chain with no positive step
+  before it is refused when written.
+- It needs an executor at v0.3.64 or later, because the executor judges it. Update the executor
+  first.
+
+A failed claim shows in `failed_claims`, for example `http status 403`.
+
+### Checks from a CALM architecture (v0.3.64 or later)
+
+`argus calm import` turns a FINOS CALM architecture into chain checks:
+
+```bash
+argus calm import <architecture.json> --bind <node-id>=<url>[,<transport>] ... --out <dir>
+```
+
+- `--bind` is required. Give one for each node, to say where it lives. A transport
+  (`streamable-http` or `http-sse`) makes the node an MCP server. With none, it is a plain HTTP
+  service. A URL never carries a credential.
+- It writes one check for each connection that must work, and one for each connection that must not
+  (it ends in `unreachable`). For an `mcp-guardrail` control it writes allow and deny checks.
+- It also writes `calm-import.json`, which lists each check and the CALM ids it covers, and
+  `UNMAPPED.md`, which lists every relationship, flow, control and node that did not become a check,
+  with the reason.
+- It never guesses a tool name, endpoint or transport. A guardrail check needs
+  `--control-arg mcp-guardrail.tool=<tool name>`.
+- It runs locally, needs no token, sends nothing and never overwrites a file.
+
+`argus calm --help` lists every flag. The checks that end in `unreachable` need an executor at
+v0.3.64 or later.
+
 For a run on an enrolled instance, the `author_get_report` MCP tool reads that run's full report
 from the execution plane: every scenario's status, and on a fail both the expected and the
 observed value. It takes `instance_id` and `run_id`, and it needs an author token. It works for
@@ -573,6 +653,24 @@ Each user sent one pass and left, so a load that said "50 users for 120 seconds"
 Load numbers taken with those versions (since 2026-09-15) are not measured: **re-run them on
 v0.3.52 or later.** From v0.3.52 a scenario with a declared duration holds its users for that
 long; a scenario with no duration still runs once and ends.
+
+### Connections and the load record (v0.3.63 or later)
+
+**Each simulated user keeps its connection open.** Before v0.3.63, every request opened a new
+connection. A long load run could use up the node's outbound ports, and requests then failed with
+status 0. A check with a `## LOAD` section now reuses one connection per user. A check without one is
+unchanged.
+
+**The load record says why requests failed.** The `load` record in the report gains two fields. They
+never change the verdict, the percentiles or `error_rate`.
+
+- `errors`: the requests that got no HTTP status, grouped by reason. At most 8 reasons, and the
+  rest are summed under `other`. A URL in a reason is cut to its scheme and host, and credentials
+  are removed. It is absent when there were none.
+- `timeline`: buckets of `started`, `answered` and `failed` requests, at most 120 buckets. It is
+  absent below two samples.
+
+The `load target breached` sentence names the top reason.
 
 ### AMQP load: allow a broker first (v0.3.52 or later)
 

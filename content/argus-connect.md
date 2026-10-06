@@ -22,7 +22,8 @@ The same steps are in the Argus app, on **Settings → API Tokens**, in the sect
    `https://argus.example.com/mcp`. Use `/mcp`. The `/sse` address is an older transport, for
    clients that cannot use `/mcp`.
 2. **An Argus token**, from **Settings → API Tokens**. It is shown once, when you generate it.
-   - An **author token** opens the `author__*` tools. A tester uses it, and so does a hub.
+   - An **author token** opens the author tools (`author_list_runs` and the like). A tester uses it,
+     and so does a hub.
    - A **builder token** opens only the `runner__*` tools and belongs to one workspace.
 3. **The token travels in a header, never in the address.** Argus refuses a token placed in the
    address.
@@ -68,8 +69,9 @@ A connection being on is not the same as you being connected. See
 
 ### What the tools are called
 
-Your agent sees each Argus tool with the namespace in front. With the namespace `argus`, an
-author token gives tools named `argus__author__…`, and a builder token gives `argus__runner__…`.
+Your agent sees each Argus tool with the namespace and two underscores in front. With the
+namespace `argus`, an author token gives tools such as `argus__author_list_runs` (one underscore
+after `author`), and a builder token gives tools such as `argus__runner__run`.
 
 If the tools do not appear, reconnect your agent's connection to the hub.
 
@@ -111,7 +113,7 @@ Start the agent session again after the file changes. The full walk-through for 
 |---|---|---|
 | "Unauthorized", or error `-32001` | no token, a wrong one, or an expired one | generate a new token and paste it in |
 | The hub shows the Argus connection but no Argus tools | no discovery token was set, and nobody has saved a token yet | save your own token in the row |
-| You see `runner__` tools but no `author__` tools | the token is a builder token | use an author token |
+| You see `runner__` tools but no `author_` tools | the token is a builder token | use an author token |
 | The token is refused right after you pasted it in Synapse | you may have pasted the word `Bearer` with it | paste the token only |
 | The tools are in the hub but your agent does not show them | the agent has not refreshed its list | reconnect the agent's connection to the hub |
 | Your agent offers an **Authenticate** button for Argus | the token is the connection | do not click it; fix the token instead |

@@ -1,7 +1,7 @@
 {
   "$schema": "https://context7.com/schema/context7.json",
-  "projectTitle": "OneDroid — Synapse and Engram",
-  "description": "OneDroid Synapse is a governed MCP gateway: one endpoint for your agents' tools, with credential custody, tool-level policy and an append-only audit log. OneDroid Engram is versioned agent memory that lives in your own Postgres.",
+  "projectTitle": "OneDroid — Argus, Dark Factory, Synapse and Engram",
+  "description": "OneDroid Argus runs end-to-end tests against a real, deployed system and judges them from its own logs, with the builder never shown what will be checked. Dark Factory puts the same governed agent on every machine, decided by a lockfile. OneDroid Synapse is a governed MCP gateway: one endpoint for your agents' tools, with credential custody, tool-level policy and an append-only audit log. OneDroid Engram is versioned agent memory that lives in your own Postgres.",
   "folders": ["content"],
   "excludeFolders": ["dist", "node_modules", "tools"],
   "excludeFiles": ["README.md"],

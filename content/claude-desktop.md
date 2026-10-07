@@ -2,8 +2,8 @@
 title: Connect Claude Desktop or claude.ai
 nav: Claude Desktop & claude.ai
 description: The browser route — sign in through a consent screen instead of handling a token. No terminal.
-section: Start here
-order: 4
+section: Synapse
+order: 33
 ---
 
 If you do not work in a terminal, this is your page. There is no command to run, nothing to

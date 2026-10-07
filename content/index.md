@@ -1,56 +1,83 @@
 ---
 title: OneDroid documentation
 nav: Overview
-description: Connect your agents to one governed endpoint, and give them memory that outlives the session.
+description: How to test what your AI agents build, put the same governed agent on every machine, connect agents to your tools through one gateway, and give them memory that outlives the session.
 section: Start here
 order: 1
 ---
 
-OneDroid is two products that solve the two halves of the same problem.
+## What these docs are
 
-**OneDroid Synapse** is a governed MCP gateway. Your agents connect to one URL instead of
-holding a dozen sets of credentials, and every tool call is authenticated, policy-checked,
-and written to an audit log you own.
+These are the working manuals for OneDroid's four products: **OneDroid Argus**, **Dark
+Factory**, **OneDroid Synapse** and **OneDroid Engram**. Each section says what the product
+is for, takes you through setting it up step by step, gives the exact commands, fields and
+tool names, and lists the failures people actually hit, with the check that tells them apart.
 
-**OneDroid Engram** is versioned agent memory that lives in your own Postgres. Context that
-survives the session, is portable between agents, permissioned, and yours to keep.
+They are not marketing. If you want the pitch, it is on [onedroid.ai](https://onedroid.ai).
+Here you will find what to type, what you should see, and what it means when you see
+something else.
 
-> When a frontier model is just an API call away, context is the moat. The model is a brain
-> in a jar — swappable, and getting cheaper. What it knows about your business is not.
+## Who they are for
 
-## Where to start
+- **Teams building software with AI coding agents**, who need to know whether what an agent
+  built actually works, not whether the agent says it does. Start with OneDroid Argus.
+- **Whoever looks after the agents themselves**: the person who has to make sure every
+  laptop and cloud workspace runs the same skills, hooks and hard stops. Start with Dark
+  Factory.
+- **Platform and security leads, and hub owners**, who have to answer what agents can reach,
+  whose credentials they use, and what they did. Start with OneDroid Synapse.
+- **Developers and everyday users** connecting Claude Code, Claude Desktop or claude.ai to
+  their tools and to memory that outlives the session. Start with
+  [Set up your hub](/setup).
+- **AI agents.** Every page is also served as markdown, so an agent can read these docs
+  directly ([below](#for-agents-reading-this)).
 
-Everyone starts by [setting up a hub](/setup) — sign in, choose where your data lives, give
-it a name. After that the path forks by how you work.
+## OneDroid Argus — end-to-end tests your builder can't see
 
-**If you do not live in a terminal**, connect your assistant through the browser:
-[Claude Desktop or claude.ai](/claude-desktop). Nothing to install, no token to look after.
+OneDroid Argus runs end-to-end tests against your real, deployed system, never a mock, and
+judges the result from the system's own logs, events and database state. The agent fixing
+the system is never shown what will be checked, so a green run means something.
 
-**If you write code**, use the token route: [Connect Claude Code](/quickstart) — one command
-and one bearer token, and the same path works for CI and any HTTP MCP client.
+[What OneDroid Argus is](/argus) · [Set up a tester and a builder](/argus-session-setup) ·
+[Quickstart](/argus-quickstart) · [Tester guide](/argus-tester-guide) ·
+[Builder guide](/argus-builder-guide)
 
-**Both paths then converge** on [Connections and credentials](/connections). This is the step
-that catches almost everyone, because enabling a service on your hub and giving it *your*
-login are two different actions and only the second one lets you call anything. If you are
-stuck right now, start there.
+## Dark Factory — the same governed agent on every machine
 
-Then:
+Dark Factory is how the agent itself gets onto a machine: the same skills, the same hooks,
+the same hard stops, on your laptop and on a cloud workspace, provably rather than by hand. A
+lockfile decides what exists, and taking an update is a one-line change. It is a method, not
+a service, and the method is a public repo.
 
-- **Running a hub for a team?** [Members, groups & sharing](/hub-administration) — invites,
-  roles, and how a role actually resolves.
-- **Want to narrow or audit what agents can do?** [Tools and governance](/tools-and-governance)
-  — see every tool, turn one off, set hub features, read the log.
-- **Want memory that outlives the session?** [Using Engram](/engram-usage) — write your first
-  object and search it back.
-- **Testing a system end to end, with the builder held to a real holdout?** [What Argus
-  is](/argus) — end-to-end tests run against your real, deployed system and judged from its
-  own logs, with a builder that never sees what it's being checked against.
-- **Wiring something else?** [Endpoints and authentication](/endpoints) explains the two
-  routes and which one your client needs.
-- **Driving Synapse from an agent?** [The MCP tools your hub exposes](/mcp-tools) documents
-  the baseline tool set.
-- **Something broken?** [Troubleshooting](/troubleshooting) covers the failures people
-  actually hit, with the one probe that tells them apart.
+[What a Dark Factory is](/dark-factory) · [Install a kit](/dark-factory-kits) if somebody
+has handed you one
+
+## OneDroid Synapse — one governed connection to your tools
+
+OneDroid Synapse is a governed MCP gateway. Your agents connect to one URL instead of holding
+a dozen sets of credentials, and every tool call is authenticated, policy-checked, and
+written to an audit log you own. Synapse has [its own section](/synapse): setting up a hub,
+connecting your agent, giving it your credentials, running a hub for a team, and governing
+what agents can do.
+
+[What Synapse is](/synapse) · [Set up your hub](/setup) ·
+[Connect Claude Code](/quickstart) · [Claude Desktop & claude.ai](/claude-desktop) ·
+[Connections and credentials](/connections)
+
+## OneDroid Engram — memory that outlives the session
+
+OneDroid Engram is versioned, permissioned agent memory that lives in a Postgres you
+control, reachable by any MCP client behind any model. Context written by one agent is
+there for the next, including the one you have not chosen yet.
+
+[What Engram is](/engram) · [Using Engram](/engram-usage) ·
+[The web app](/engram-web-app) · [Tool reference](/engram-tools)
+
+## Something broken?
+
+[Troubleshooting](/troubleshooting) covers the failures people actually hit, with the one
+probe that tells them apart. If an agent is connected but every call is refused, read
+[Connections and credentials](/connections) first: that is almost always the cause.
 
 ## These docs are open source
 
@@ -70,7 +97,7 @@ Every page here is available as markdown: append `.md` to any path, or send an A
 user-agent (or `Accept: text/markdown`) to the canonical URL and you will get the markdown
 source rather than rendered HTML. The index is at [`/llms.txt`](/llms.txt).
 
-Both servers are published to the official MCP registry under the DNS-verified
+Synapse and Engram are published to the official MCP registry under the DNS-verified
 `ai.onedroid` namespace:
 
 ```

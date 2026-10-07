@@ -3,7 +3,7 @@ title: Argus — end-to-end tests your builder can't see
 nav: What Argus is
 description: End-to-end tests run against your real, deployed system and judged on its own logs — with the builder held to a genuine holdout.
 section: Argus
-order: 30
+order: 10
 ---
 
 Argus runs end-to-end tests against a real, deployed system — never a mock — and judges the
@@ -71,8 +71,57 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.52. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.65. Each note below links to the section that has the detail.
 
+- **A connection that must fail is now a claim, and `argus calm import`** (v0.3.65):
+  `- step <name>: unreachable` passes only when the connection could not be made, and
+  `argus calm import` turns a CALM architecture into checks. Both need executor v0.3.65 or later
+  for the claim. See [Connections that must fail](/argus-tester-guide#connections-that-must-fail-v0365-or-later)
+  and [Checks from a CALM architecture](/argus-tester-guide#checks-from-a-calm-architecture-v0365-or-later).
+- **Two fixes in v0.3.65:** an MCP check against a server that sends notifications before its
+  result (on a `text/event-stream` answer) now judges the result, not the first notification. And
+  `validate-config` no longer asks for `targets.mcp.base_url` for a chain check that also carries an
+  `mcp` tag: it decides by the engine that runs the check, chain before mcp.
+- **Clearer onboarding** (v0.3.63 and v0.3.65): credential files are created 0600, a full Docker
+  address pool is named, and a workspace-bound token says it cannot onboard. See
+  [Onboarding notes](/argus-tester-guide#onboarding-notes-v0363-or-later).
+- **Load checks keep connections open, and the load record says why requests failed** (v0.3.63):
+  see [Connections and the load record](/argus-tester-guide#connections-and-the-load-record-v0363-or-later).
+- **A target that runs in no cluster** (v0.3.63): `outside_cluster: true`. Update the executor before
+  you add the key. See
+  [Several test targets](/argus-tester-guide#several-test-targets-v0352-or-later).
+- **Logs and metrics survive a pod recreate on Kubernetes** (v0.3.62): the Loki and Pushgateway
+  now keep their data on volumes, and `--obs-storage-class` picks the class. Existing instances get
+  them when you onboard again or run `argus upgrade --apply`. See
+  [Storage for logs and metrics](/argus-tester-guide#storage-for-logs-and-metrics-v0362-or-later).
+- **`check_env`, `${INGESTION_URL}` and clearer onboarding errors** (v0.3.62): declare the names a
+  check needs, use the base URL in a chain step, and read why a config was refused. See
+  [Values a check uses](/argus-tester-guide#writing-a-scenario).
+- **A target can be declared never load tested** (v0.3.60): `load_test: never`. Update the executor
+  before you add the key. See
+  [Several test targets](/argus-tester-guide#several-test-targets-v0352-or-later).
+- **`argus validate-config --scenarios` reports the scenario writers' rules** (v0.3.59), and a
+  load step the broker blocked is no longer flagged `generator_limited`. See
+  [Writing a scenario](/argus-tester-guide#writing-a-scenario) and
+  [Load testing](/argus-tester-guide#load-testing).
+- **A blocked broker reads as what it is** (v0.3.55 and v0.3.56): the run fails with
+  `blocked by broker: <reason>`. See [Load testing](/argus-tester-guide#load-testing).
+- **A failed numeric claim shows the number** (v0.3.54): `failed_claims[].observed` holds the value
+  the field held, not the saved-value placeholder. See [Running](/argus-tester-guide#running).
+- **Comparing systems** (v0.3.57): see [Comparing systems](/argus-compare).
+- **A new web app** (v0.3.53): five places, **Overview**, **Capacity**, **Runs**, **Checks** and
+  **Proof**, one run drawer, and **Needs a person** items you file with `author_file_attention`.
+  Hand-started runs can say what they are for with `intent`, `expect` and `note`. See
+  [What the Argus app shows](/argus-tester-guide#what-the-argus-app-shows) and
+  [Running](/argus-tester-guide#running).
+- **A least-privilege AMQP load login, and metrics retention** (v0.3.53): `queues.load` sets the
+  queue name prefix, and `observability.pushgateway.group_retention` limits how long a run's
+  metrics stay. See [Load testing](/argus-tester-guide#load-testing) and
+  [How long a run's metrics are kept](/argus-tester-guide#how-long-a-runs-metrics-are-kept-v0353-or-later).
+- **`argus doctor`** (v0.3.53): a working cloud tester no longer fails, and `sut-reachable` tells a
+  fresh reading from a stale one. See the [Quickstart](/argus-quickstart#4-prove-read-access-before-wiring-anything-else).
+- **Proof page** (v0.3.53): certified releases first, filters and search, and an **Anchored** filter
+  on Runs. See [Ledger and certificates](/argus-ledger#for-people-the-proof-page).
 - **AMQP load testing is open** (v0.3.52): a load run against a broker you list under
   `load_allowed_targets`. See [Load testing](/argus-tester-guide#load-testing).
 - **`## LOAD` durations work again.** From v0.3.37 to v0.3.51 every load duration was ignored, so
@@ -91,8 +140,7 @@ These pages describe Argus v0.3.52. Each note below links to the section that ha
   failed body check named for the tester. See [Running](/argus-tester-guide#running).
 - **Install the CLI from a release** and the `argus doctor` fixes: see the
   [Quickstart](/argus-quickstart#1-get-the-argus-cli).
-- **A new web app layout** (control plane, October 2026): the sidebar has five places, **Overview**,
-  **Capacity**, **Runs**, **Checks** and **Proof** (Proof was called Ledger). **Environments**,
+- **Where things moved in the web app** (v0.3.53): Proof was called Ledger. **Environments**,
   **API Tokens**, **My workspaces** and **Onboarding & setup** are in the **Settings** menu at the top
   right. Old links still open.
 
@@ -106,5 +154,7 @@ These pages describe Argus v0.3.52. Each note below links to the section that ha
   read a red.
 - **[Builder guide](/argus-builder-guide)** — what you may call, what you cannot see and why,
   and how to read a redacted verdict.
+- **[Comparing systems](/argus-compare)**: run one sealed set of checks against an old system and
+  its rewrite, or two versions of one system, and read where their outputs differ.
 - **[Ledger and certificates](/argus-ledger)** — certify a build, see every anchor on the Proof
   page, and check a certificate as a third party.

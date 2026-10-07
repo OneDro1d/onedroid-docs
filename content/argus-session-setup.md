@@ -3,7 +3,7 @@ title: Set up a tester and a builder for your app
 nav: Set up tester and builder
 description: Every app you test with Argus gets two agent sessions, kept apart. The order to set them up in, the tokens each one holds, and one path per session.
 section: Argus
-order: 30.5
+order: 10.5
 ---
 
 Every app you test with Argus gets **two agent sessions**, and they must stay separate:

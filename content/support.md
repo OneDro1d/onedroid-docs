@@ -38,7 +38,7 @@ majority of them:
 Every Synapse response carries an `X-Correlation-Id` header. Quote it: it lets us find the
 exact request in the hub's audit log without asking you for anything else.
 
-- **Product**: Synapse, Engram, Argus, or a kit, and the version if you have one.
+- **Product**: Synapse, Engram, OneDroid Argus, or a kit, and the version if you have one.
 - **The correlation id** from the response, or the time in UTC if you do not have it.
 - **The hub slug** (for `/hub/<slug>/mcp`), or that you used `/agent/mcp`.
 - **The tool or page**, and what you expected to happen.

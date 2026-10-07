@@ -45,6 +45,9 @@ Then:
 - **Testing a system end to end, with the builder held to a real holdout?** [What Argus
   is](/argus) — end-to-end tests run against your real, deployed system and judged from its
   own logs, with a builder that never sees what it's being checked against.
+- **Putting the same governed agent on every machine?** [What a Dark Factory
+  is](/dark-factory) — the three-tier model where a lockfile decides what exists, and
+  [Install a kit](/dark-factory-kits) if somebody has handed you one.
 - **Wiring something else?** [Endpoints and authentication](/endpoints) explains the two
   routes and which one your client needs.
 - **Driving Synapse from an agent?** [The MCP tools your hub exposes](/mcp-tools) documents

@@ -60,7 +60,7 @@ every later poll. Want both to be true before you trust anything else about the 
 - **A workspace-bound token is refused with a plain message.** The first refused call says that
   such a token cannot onboard or tear down. Use the owner's sign-in or a token that covers all
   workspaces. See [Your workspace](#your-workspace).
-- **Docker has no address range left (v0.3.64 or later).** Each Docker (compose) instance has its
+- **Docker has no address range left (v0.3.65 or later).** Each Docker (compose) instance has its
   own network. At about the 31st on one machine, Docker answers "all predefined address pools have
   been fully subnetted". Onboarding now names that as the cause. It is not a problem with your
   system or your files. To free a range, run `docker network prune` (it removes networks no
@@ -525,7 +525,7 @@ observed `15` into `1${saved.acks}`. The verdict was always right. Every other s
 still hidden from reports, and a claim that is not numeric (such as `contains ${saved.token}`)
 still shows the placeholder. The `scenario-author` skill that ships with Argus has the details.
 
-### Connections that must fail (v0.3.64 or later)
+### Connections that must fail (v0.3.65 or later)
 
 `- step <name>: unreachable` is a claim for a connection that must not work, such as a
 NetworkPolicy deny or a closed port. It passes only when no HTTP response arrived because the
@@ -541,12 +541,12 @@ https target's TLS handshake. Rules:
 - It is judged only after an earlier positive step of the same chain passed. Otherwise the step reads
   `not-measured`, so a dead target cannot pass every negative check. A chain with no positive step
   before it is refused when written.
-- It needs an executor at v0.3.64 or later, because the executor judges it. Update the executor
+- It needs an executor at v0.3.65 or later, because the executor judges it. Update the executor
   first.
 
 A failed claim shows in `failed_claims`, for example `http status 403`.
 
-### Checks from a CALM architecture (v0.3.64 or later)
+### Checks from a CALM architecture (v0.3.65 or later)
 
 `argus calm import` turns a FINOS CALM architecture into chain checks:
 
@@ -567,7 +567,7 @@ argus calm import <architecture.json> --bind <node-id>=<url>[,<transport>] ... -
 - It runs locally, needs no token, sends nothing and never overwrites a file.
 
 `argus calm --help` lists every flag. The checks that end in `unreachable` need an executor at
-v0.3.64 or later.
+v0.3.65 or later.
 
 For a run on an enrolled instance, the `author_get_report` MCP tool reads that run's full report
 from the execution plane: every scenario's status, and on a fail both the expected and the

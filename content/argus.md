@@ -71,18 +71,18 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.64. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.65. Each note below links to the section that has the detail.
 
-- **A connection that must fail is now a claim, and `argus calm import`** (v0.3.64):
+- **A connection that must fail is now a claim, and `argus calm import`** (v0.3.65):
   `- step <name>: unreachable` passes only when the connection could not be made, and
-  `argus calm import` turns a CALM architecture into checks. Both need executor v0.3.64 or later
-  for the claim. See [Connections that must fail](/argus-tester-guide#connections-that-must-fail-v0364-or-later)
-  and [Checks from a CALM architecture](/argus-tester-guide#checks-from-a-calm-architecture-v0364-or-later).
-- **Two fixes in v0.3.64:** an MCP check against a server that sends notifications before its
+  `argus calm import` turns a CALM architecture into checks. Both need executor v0.3.65 or later
+  for the claim. See [Connections that must fail](/argus-tester-guide#connections-that-must-fail-v0365-or-later)
+  and [Checks from a CALM architecture](/argus-tester-guide#checks-from-a-calm-architecture-v0365-or-later).
+- **Two fixes in v0.3.65:** an MCP check against a server that sends notifications before its
   result (on a `text/event-stream` answer) now judges the result, not the first notification. And
   `validate-config` no longer asks for `targets.mcp.base_url` for a chain check that also carries an
   `mcp` tag: it decides by the engine that runs the check, chain before mcp.
-- **Clearer onboarding** (v0.3.63 and v0.3.64): credential files are created 0600, a full Docker
+- **Clearer onboarding** (v0.3.63 and v0.3.65): credential files are created 0600, a full Docker
   address pool is named, and a workspace-bound token says it cannot onboard. See
   [Onboarding notes](/argus-tester-guide#onboarding-notes-v0363-or-later).
 - **Load checks keep connections open, and the load record says why requests failed** (v0.3.63):

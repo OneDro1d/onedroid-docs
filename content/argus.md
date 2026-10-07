@@ -71,8 +71,18 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.65. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.66. Each note below links to the section that has the detail.
 
+- **HTTP load: a stepped ramp that measures a limit** (v0.3.66): a new `HTTP Load` layer raises
+  users step by step against one http target you allowed, stops at the first step that is not
+  comfortable, and the Capacity page shows the limit in users. Update the executor before you list
+  an http target under `load_allowed_targets`. See
+  [HTTP load](/argus-tester-guide#http-load-a-stepped-ramp-v0366-or-later).
+- **Three fixes in v0.3.66:** a chain scenario's `http` steps now send the run's `X-Correlation-Id`
+  (see [Reading a red](/argus-tester-guide#reading-a-red)); native onboarding wires both agent
+  folders to the router it started, even when another router holds the usual port; and a workspace
+  account no longer sees a misleading "context was not found" line. See
+  [Onboarding notes](/argus-tester-guide#onboarding-notes-v0363-or-later).
 - **A connection that must fail is now a claim, and `argus calm import`** (v0.3.65):
   `- step <name>: unreachable` passes only when the connection could not be made, and
   `argus calm import` turns a CALM architecture into checks. Both need executor v0.3.65 or later

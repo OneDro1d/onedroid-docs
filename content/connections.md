@@ -2,8 +2,8 @@
 title: Connections and credentials
 nav: Connections and credentials
 description: Why a connection can be on and still refuse you, and how to give each upstream your own credential.
-section: Start here
-order: 5
+section: Synapse
+order: 34
 ---
 
 This is where most people get stuck, and it is almost always the same misunderstanding.

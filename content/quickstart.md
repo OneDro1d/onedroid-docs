@@ -2,8 +2,8 @@
 title: Connect Claude Code
 nav: Connect Claude Code
 description: One command and one bearer token. No install, no tunnel, no device-code flow.
-section: Start here
-order: 3
+section: Synapse
+order: 32
 ---
 
 This is the fastest path, and it is the right one for Claude Code, CI, and any HTTP MCP

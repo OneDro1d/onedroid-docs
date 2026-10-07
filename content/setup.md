@@ -2,8 +2,8 @@
 title: Set up your hub
 nav: Set up your hub
 description: Sign in, choose where your data lives, and create the hub your agents will connect to.
-section: Start here
-order: 2
+section: Synapse
+order: 31
 ---
 
 Onboarding is two screens. Only the first carries any weight.

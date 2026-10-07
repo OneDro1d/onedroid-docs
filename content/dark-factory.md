@@ -3,7 +3,7 @@ title: Dark Factory — a governed agent, reproducible on every machine
 nav: What a Dark Factory is
 description: The three-tier model that puts the same governed agent on every machine, where a lockfile decides what exists and taking an update is a one-line SHA bump.
 section: Dark Factory
-order: 40
+order: 20
 ---
 
 Synapse governs what an agent may *call*. Engram gives it memory that outlives the session.

@@ -3,7 +3,7 @@ title: Using Engram
 nav: Using Engram
 description: Connect an MCP client, write your first object, search it back, read the results correctly, and share with a team.
 section: Engram
-order: 21
+order: 41
 ---
 
 [What Engram is](/engram) covers why it exists. This page takes you from nothing to a working

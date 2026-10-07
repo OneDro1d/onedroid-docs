@@ -2,8 +2,8 @@
 title: Administer a hub — members, groups, sharing
 nav: Members, groups & sharing
 description: Who can reach your hub, what role they hold, and how a role actually resolves — invites, groups, and grants.
-section: Start here
-order: 6
+section: Synapse
+order: 35
 ---
 
 A hub has an owner and, usually, other people. This page is the **Manage** and part of the

@@ -3,7 +3,7 @@ title: Install a Dark Factory kit
 nav: Install a kit
 description: Copy the kit into your own private repo, add this machine, install, and verify — plus the five failures that actually happen.
 section: Dark Factory
-order: 41
+order: 21
 ---
 
 A **kit** is a Tier-3 record provisioned for a person: a lockfile and machine config, and no

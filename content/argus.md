@@ -3,7 +3,7 @@ title: Argus — end-to-end tests your builder can't see
 nav: What Argus is
 description: End-to-end tests run against your real, deployed system and judged on its own logs — with the builder held to a genuine holdout.
 section: Argus
-order: 30
+order: 10
 ---
 
 Argus runs end-to-end tests against a real, deployed system — never a mock — and judges the

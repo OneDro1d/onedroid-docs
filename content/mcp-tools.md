@@ -3,7 +3,7 @@ title: The MCP tools your hub exposes
 nav: MCP tool reference
 description: The baseline tools every hub has — discovery, credentials, memory, admin — with what each returns and who may call it.
 section: Reference
-order: 13
+order: 53
 ---
 
 The moment an agent connects to a hub it has a set of **baseline tools**, regardless of

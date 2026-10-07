@@ -3,7 +3,7 @@ title: Argus Ledger — test results anyone can verify
 nav: Ledger and certificates
 description: How Argus anchors a certification on a blockchain — the tests sealed before the run, the verdict after it — and how people, AI agents and third parties use and check it.
 section: Argus
-order: 34
+order: 14
 ---
 
 A green test run is a claim. The Ledger turns it into evidence. Argus writes each step of a

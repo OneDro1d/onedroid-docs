@@ -3,7 +3,7 @@ title: Argus onboarding examples
 nav: Onboarding examples
 description: Real apps taken through Argus onboarding from start to finish — the commands that were run, what they printed, and the problems hit on the way.
 section: Argus
-order: 35
+order: 15
 ---
 
 Each example here walks one real app through Argus onboarding from start to finish: the commands

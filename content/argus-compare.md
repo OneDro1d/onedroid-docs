@@ -3,7 +3,7 @@ title: Argus — comparing systems
 nav: Comparing systems
 description: Run one sealed set of checks against several systems, for example an old system and its rewrite, and read check by check whether they gave the same output.
 section: Argus
-order: 32.5
+order: 12.5
 ---
 
 A comparison runs **one sealed set of checks** against several systems and tells you, check by

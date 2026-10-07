@@ -2,8 +2,8 @@
 title: Tools, features and the audit trail
 nav: Tools & governance
 description: See every tool your hub exposes, turn one off for everyone, set hub features, and read the log of what happened.
-section: Start here
-order: 7
+section: Synapse
+order: 36
 ---
 
 Once a hub has connections, it exposes their tools to your agents. The rest of the **Connect**

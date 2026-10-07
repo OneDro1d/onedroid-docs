@@ -3,7 +3,7 @@ title: Engram tool reference
 nav: Tool reference
 description: All 45 engram_* MCP tools, grouped by what they act on, with their arguments and the behaviour you only learn by calling them.
 section: Engram
-order: 23
+order: 43
 ---
 
 Every tool below was listed by a live `tools/list` against `https://engram.onedroid.ai/mcp` on

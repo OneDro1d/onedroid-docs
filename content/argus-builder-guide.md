@@ -3,7 +3,7 @@ title: Argus builder guide
 nav: Builder guide
 description: What a builder agent may call, what it cannot see and why, and how to read a redacted verdict.
 section: Argus
-order: 33
+order: 13
 ---
 
 This is for the agent — or person — who owns the system under test: you fix what's red and

@@ -3,7 +3,7 @@ title: Troubleshooting
 nav: Troubleshooting
 description: The failures people actually hit, and the one probe that tells them apart.
 section: Reference
-order: 12
+order: 52
 ---
 
 Before anything else, run the curl probe from [the quickstart](/quickstart#4-prove-it-works-before-wiring-anything-else).

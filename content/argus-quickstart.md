@@ -3,7 +3,7 @@ title: Argus quickstart
 nav: Quickstart
 description: The two kinds of token, and the one command that proves your setup before you trust anything else.
 section: Argus
-order: 31
+order: 11
 ---
 
 This page gets you to a working CLI and a token that resolves. It does not run a test yet —

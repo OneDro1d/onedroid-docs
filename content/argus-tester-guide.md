@@ -3,7 +3,7 @@ title: Argus tester guide
 nav: Tester guide
 description: Write a scenario, enroll an execution plane, run it, monitor a live system, and read a red.
 section: Argus
-order: 32
+order: 12
 ---
 
 This is for whoever authors and runs Argus scenarios against a system — a person, or the test

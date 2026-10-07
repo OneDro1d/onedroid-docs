@@ -3,7 +3,7 @@ title: "Example: Documenso (local Docker Compose)"
 nav: "Example: Documenso"
 description: Documenso v2.19.0 onboarded to Argus on local Docker Compose and registered with a control plane — the patch, the config, four scenarios, planted failures and every problem hit.
 section: Argus
-order: 36
+order: 16
 ---
 
 > Contributed by Piotr Podgorni; tested with Argus 0.3.50 on 2026-10-02. Part of

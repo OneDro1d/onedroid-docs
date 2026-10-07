@@ -3,7 +3,7 @@ title: Connect Argus as a remote MCP
 nav: Connect as a remote MCP
 description: Add Argus to a Synapse hub so every agent on the hub can call it, or connect one agent to Argus directly. The exact fields, whose token goes where, and what each failure means.
 section: Argus
-order: 30.7
+order: 10.7
 ---
 
 Argus is a remote MCP server. An agent reaches it in one of two ways:

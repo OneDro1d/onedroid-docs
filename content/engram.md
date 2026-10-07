@@ -3,7 +3,7 @@ title: Engram — portable agent memory
 nav: What Engram is
 description: Versioned, permissioned context in a Postgres you own, reachable by any MCP client behind any model.
 section: Engram
-order: 20
+order: 40
 ---
 
 Models are interchangeable. Your context is not. Engram is where an organisation's durable

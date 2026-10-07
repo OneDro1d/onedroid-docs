@@ -3,7 +3,7 @@ title: Support
 nav: Support
 description: How to get help with OneDroid Synapse, OneDroid Engram, OneDroid Argus and the Dark Factory kits — who answers, where, how fast, and what to put in a report so it is answered first time.
 section: Reference
-order: 13
+order: 54
 ---
 
 Support for every OneDroid product comes from the people who build it. There is no ticket

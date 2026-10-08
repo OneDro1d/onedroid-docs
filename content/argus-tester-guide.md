@@ -66,6 +66,19 @@ every later poll. Want both to be true before you trust anything else about the 
   system or your files. To free a range, run `docker network prune` (it removes networks no
   container uses), or give Docker a wider `default-address-pools` in its `daemon.json`, restart
   Docker and onboard again.
+- **Native onboarding wires both agent folders to the router it started (v0.3.66 or later).** If
+  another Argus router already holds 127.0.0.1:9765 (for example one you started by hand from an
+  older kit), onboarding used to point the product folder at that one. Now one line names the other
+  router (its pid and binary), says it was left running, and both folders are wired to the router
+  this onboarding started. Step 9/9 lists every folder with the port its `.mcp.json` names, and says
+  PARTIALLY SET if one points elsewhere. On an older kit, check that `product-agent/.mcp.json` and
+  your scenarios folder's `.mcp.json` name the same port. Use the `argus` binary that came with the
+  kit (or a newer one): with an older binary the router never reports its port, and native
+  onboarding stops after 15 seconds with a warning that says so.
+- **No "context was not found" line on a workspace account (v0.3.66 or later).** When the cluster
+  does not let your account check for the PodMonitor CRD, onboarding includes the PodMonitor, says
+  so once, and no longer prints a second, misleading "could not check kube-context … context was not
+  found" line.
 
 ### Installing into a Kubernetes cluster
 
@@ -625,8 +638,9 @@ schedule that runs: `author_get_run_status` (with neither `run_id` nor `run_requ
 the schedule, and after one interval has passed its `last_requested_at` should be set and
 `last_skip_reason` absent.
 
-A scheduled run never carries an [AMQP load](#load-testing) scenario: the control plane does
-not queue one for a `scheduled`, `final` or `rehearsal` run.
+A scheduled run never carries an [AMQP load](#load-testing) or
+[HTTP load](#http-load-a-stepped-ramp-v0366-or-later) scenario: the control plane does not queue
+one for a `scheduled`, `final` or `rehearsal` run.
 
 To stop a schedule without losing it, call `author_set_schedule` again with `interval: "off"`
 (keep `mode: "monitor"` on that call too):
@@ -641,10 +655,13 @@ To stop a schedule without losing it, call `author_set_schedule` again with `int
 
 ## Load testing
 
-A scenario declares a load in a `## LOAD` section. Two kinds exist. A scenario on an ordinary
+A scenario declares a load in a `## LOAD` section. Three kinds exist. A scenario on an ordinary
 layer (HTTP and the others) holds `**Users**`, `**Ramp Seconds**`, `**Duration Seconds**`,
-`**Target P95 Ms**` and `**Max Error Rate**`. A scenario on the **AMQP Load** layer (v0.3.52 or
-later) drives sessions against a message broker, and is described below.
+`**Target P95 Ms**` and `**Max Error Rate**`: one load, held and judged. A scenario on the
+**AMQP Load** layer (v0.3.52 or later) drives sessions against a message broker, step by step. A
+scenario on the **HTTP Load** layer (v0.3.66 or later) steps users up against an http target and
+stops at the first step that is not comfortable, so you get a measured limit: see
+[HTTP load](#http-load-a-stepped-ramp-v0366-or-later).
 
 ### Load numbers taken before v0.3.52
 
@@ -771,6 +788,98 @@ Argus latencies read about 1 ms higher than RabbitMQ PerfTest at low load, becau
 schedules its threads inside the executor pod. Compare throughput directly, and compare latency
 against Argus's own baseline.
 
+### HTTP load: a stepped ramp (v0.3.66 or later)
+
+An **HTTP Load** scenario finds how many users an HTTP system can serve comfortably. It raises the
+load step by step against ONE named http target, for example 10, 20, 40, 80 users, each step held
+for `**Step Duration Seconds**`. It records each step and **stops at the first step that is not
+comfortable**, so a system that has broken is not pushed harder. The largest comfortable step is
+the tested limit the **Capacity** page shows, in users, with the date and version it was measured
+on.
+
+**Allow the target first.** As for AMQP load, it is off by default. Declare the system as a
+**named** entry under `targets.http_targets`, then list that name under the top-level
+`load_allowed_targets`:
+
+```yaml
+targets:
+  http_targets:
+    api-lab:
+      base_url: http://orders-api.lab.svc:8080   # a lab or a dedicated test deployment, never a live one
+load_allowed_targets:
+  api-lab:
+    max_sessions: 200        # the largest step (users) a scenario may ask for; default 2000
+```
+
+An entry that names only a broker does not allow an HTTP ramp at a target of the same name. A
+`base_url` with a `prod`, `production`, `prd` or `shared` segment is refused when the config loads.
+
+⚠️ **Update the executor before you add an http entry.** An executor older than 0.3.66 accepts only
+broker names under `load_allowed_targets` and checks that block when it loads the config, so an
+http entry makes it refuse the **whole** config, not just the HTTP Load check.
+
+**The scenario.** It names the target with `**Target**: <name>`, uses the layer `HTTP Load`, and
+sends the request in its `## TRIGGER`. Each user keeps one connection open and repeats that request
+back to back for the step.
+
+````markdown
+## Metadata
+- **ID**: HTTPLOAD-001
+- **Layer**: HTTP Load
+- **Target**: api-lab
+
+## TRIGGER
+POST `/api/orders`
+Content-Type: application/json
+```json
+{"sku": "A-1", "qty": 1}
+```
+
+## EXPECT
+### Runnable
+- every step is measured
+- the smallest step is comfortable
+
+## LOAD
+- **Steps**: 10, 20, 40, 80
+- **Step Duration Seconds**: 60
+- **Ramp Seconds**: 10
+- **Settle Seconds**: 20
+- **Target P95 Ms**: 500
+- **Max Error Rate**: 0.01
+- **Must Sustain**: 20
+````
+
+| Key | Meaning | Default | Bounds |
+|---|---|---|---|
+| **Steps** | users per step, one run each; they must rise | required | 1 to 12 steps, each 1 to 2000 users, and at most the target's `max_sessions` |
+| **Step Duration Seconds** | how long each step is held, ramp included | required | 10 to 3600 |
+| **Ramp Seconds** | users start over this; excluded from the step's numbers | 10 | 0 to half the step |
+| **Settle Seconds** | pause between steps | 30 | 0 to 600 |
+| **Target P95 Ms** | a step whose response p95 is above this is not comfortable | required | |
+| **Max Error Rate** | a step with more of its requests answered 400 or more, or not at all, is not comfortable | required | |
+| **Must Sustain** | the check fails unless this step was reached and was comfortable | none | one of the **Steps** |
+
+`### Runnable` takes only `every step is measured` and `the smallest step is comfortable`. `Users`,
+`Duration Seconds`, the AMQP-only keys and a `status=` bullet are refused by name: a request counts
+as served when it is answered below 400.
+
+**The verdict.** The check is `failed` if a step recorded no request, if even the smallest step was
+not comfortable, or if a `Must Sustain` step was not reached or not comfortable. It is `degraded`
+if every claim held but the target restarted during a step. Otherwise it `passed`: a ramp that
+stops above its first step has **measured** a limit, and that is not a failure. A target that
+refuses every connection is a target that broke (`failed`), not an Argus error.
+
+**What is refused**, exactly as for AMQP load: a target you did not allow, or a step above its
+`max_sessions` (status `error`, `refused before firing … Nothing was sent.`); an executor older
+than 0.3.66; and `final`, `scheduled` and `rehearsal` runs. The executor also checks the step
+limits again when it runs, so a profile that skipped validation is refused rather than sent.
+
+**Where the results show.** The same places as an AMQP ramp: one record per step in the run's
+`load_ramp` (`author_get_run_status`), with the driver `http`, users, the rates of requests started,
+answered and served below 400, the request-to-response time quantiles, failures by class
+(`status:<code>`, `timeout`, `transport`) with the reasons, and the step the ramp stopped at.
+
 ⚠️ **A load result is only as good as the environment it names.** Write down, next to the numbers,
 the environment (which cluster, whether it is the live system or a lab copy), its resources
 (replicas, CPU and memory requests and limits, the broker's own limits), the load (rate, sessions,
@@ -796,6 +905,12 @@ From v0.3.52 the id must be a **whole** correlation id, exactly as `get-report` 
 `tr-<run_id>-<scenario_id>-<8 hex>`. A prefix, a fragment or a pattern (`tr-`, for instance) is
 refused, naming the shape it expects. Earlier versions took any text and matched it as a
 substring, so a fragment could read every run in the window. This holds for every role.
+
+Your system sees that id as the `X-Correlation-Id` header on an HTTP scenario's requests. From
+v0.3.66 that includes every request of a chain scenario's `http` steps, poll re-attempts included.
+Before v0.3.66 a chain step sent no such header, so `get-sagas`, `tail-logs` and the dashboard link
+found nothing for a chain scenario. An MCP scenario's requests do not carry it yet. The header is
+reserved: a scenario cannot set it, in any letter case.
 
 Read `failure.observed` before changing anything. A red is the system telling you something —
 never weaken an assertion to make it go green; the only honest reason to drop a check is proof

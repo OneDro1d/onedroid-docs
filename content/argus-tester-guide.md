@@ -36,10 +36,11 @@ execution plane (a compose stack, a container namespace, or a cluster namespace 
 system) and, for a cloud-registered instance, a short-lived **enrollment token**:
 
 ```bash
-argus cloud-enroll --control-plane "$ARGUS_CP_URL" --instance-id <instance-id>
+argus cloud-enroll --control-plane "$ARGUS_CP_URL" --instance-id <instance-id> --token-dir <a-private-dir>
 ```
 
-The enrollment token this mints is deliberately short-lived — it authorizes the execution
+`--token-dir` is required: the token is written to `<a-private-dir>/<instance-id>.enrollment` and
+is never printed. The enrollment token this mints is deliberately short-lived — it authorizes the execution
 plane's *first* introduction to the control plane, nothing after. Once the instance is up,
 check it the same way every time, because registered and reachable are different claims:
 

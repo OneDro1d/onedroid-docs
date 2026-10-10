@@ -71,7 +71,21 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.66. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.69. Each note below links to the section that has the detail.
+
+- **Fault steps: break the system under test during a run** (v0.3.69): a `fault` step in a chain
+  scenario can stop, start or scale a Deployment, wait for it, or delay, cut or truncate a connection
+  through a Toxiproxy. Argus undoes every fault, and nothing runs unless an operator lists it under
+  `fault_allowed_targets`. A run with faults gets certificate format `argus-certificate/v4`. It needs
+  an executor at v0.3.69 or later. See
+  [Fault steps](/argus-tester-guide#fault-steps-v0369-or-later).
+- **Enroll by workspace id, and create a workspace from the CLI** (v0.3.69):
+  `argus cloud-enroll --workspace <id>` and `argus cloud-create-workspace --name <name>`. See
+  [Enroll by workspace id](/argus-tester-guide#enroll-by-workspace-id-and-create-a-workspace-from-the-cli-v0369-or-later).
+- **Four `argus doctor` fixes** (v0.3.69): a new `router-wiring` check, `--tester` runs the cluster
+  checks without a tester.env, `argus-config` names hosts your scenarios call by full URL that the
+  config does not list, and `executor-version` knows the fixes up to v0.3.68. See the
+  [Quickstart](/argus-quickstart#4-prove-read-access-before-wiring-anything-else).
 
 - **HTTP load: a stepped ramp that measures a limit** (v0.3.66): a new `HTTP Load` layer raises
   users step by step against one http target you allowed, stops at the first step that is not

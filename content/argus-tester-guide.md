@@ -36,10 +36,11 @@ execution plane (a compose stack, a container namespace, or a cluster namespace 
 system) and, for a cloud-registered instance, a short-lived **enrollment token**:
 
 ```bash
-argus cloud-enroll --control-plane "$ARGUS_CP_URL" --instance-id <instance-id>
+argus cloud-enroll --control-plane "$ARGUS_CP_URL" --instance-id <instance-id> --token-dir <a-private-dir>
 ```
 
-The enrollment token this mints is deliberately short-lived — it authorizes the execution
+`--token-dir` is required: the token is written to `<a-private-dir>/<instance-id>.enrollment` and
+is never printed. The enrollment token this mints is deliberately short-lived — it authorizes the execution
 plane's *first* introduction to the control plane, nothing after. Once the instance is up,
 check it the same way every time, because registered and reachable are different claims:
 
@@ -49,6 +50,35 @@ argus cloud-executor-status --control-plane "$ARGUS_CP_URL" --instance-id <insta
 
 `"registered": true` alone is not enough — an instance can register once and then be refused on
 every later poll. Want both to be true before you trust anything else about the instance.
+
+### Enroll by workspace id, and create a workspace from the CLI (v0.3.69 or later)
+
+If your token covers all workspaces, name the workspace you are enrolling into with `--workspace`:
+
+```bash
+argus cloud-enroll --control-plane "$ARGUS_CP_URL" --workspace <workspace-id> --instance-id <instance-id> --token-dir <a-private-dir>
+```
+
+- The workspace must be one you own. The control plane checks that. If it cannot check, it does not
+  mint a credential.
+- A token that covers all workspaces has no workspace of its own, so `--workspace` is required with
+  it. A session you signed in with is already bound to one workspace. If you name a different one,
+  the call is refused: switch workspace first.
+- A token bound to one workspace still cannot enroll an instance. See
+  [Your workspace](#your-workspace).
+- The credential is written to `<a-private-dir>/<instance-id>.enrollment`. It works once and expires
+  after 15 minutes. It is never printed.
+
+To make a new workspace without the website:
+
+```bash
+argus cloud-create-workspace --control-plane "$ARGUS_CP_URL" --name <name>
+```
+
+It needs your sign-in or a token that covers all workspaces. A token bound to one workspace is
+refused. The control plane checks the name: a name that is not allowed, or that you already use for
+another workspace, is refused. On success it prints `created`, the new `workspace_id` and the `name`.
+Use that id with `cloud-enroll --workspace`.
 
 ### Onboarding notes (v0.3.63 or later)
 
@@ -537,6 +567,129 @@ a failed numeric claim that compares against a saved value shows the number the 
 observed `15` into `1${saved.acks}`. The verdict was always right. Every other saved value is
 still hidden from reports, and a claim that is not numeric (such as `contains ${saved.token}`)
 still shows the placeholder. The `scenario-author` skill that ships with Argus has the details.
+
+### Fault steps (v0.3.69 or later)
+
+A `fault` step makes the system under test fail while a chain scenario runs. It can stop, start or
+scale a Deployment, wait for it to be ready, or delay, cut or truncate one connection. Argus puts
+everything back, and the report and the certificate say what was done.
+
+Nothing can be faulted unless an operator lists it. With no `fault_allowed_targets` block in
+`argus-config.yaml`, no fault step can run.
+
+**The actions.** Set `op` on the step:
+
+| `op` | What it does | Keys |
+|---|---|---|
+| `stop` | scales a Deployment to 0 | `deployment` |
+| `start` | returns a Deployment you stopped earlier in the chain to its old count | `deployment`, optional `replicas` |
+| `scale` | sets the replica count (1 to 10) | `deployment`, `replicas` |
+| `wait_ready` | waits until the Deployment's pods are ready (default 120s, at most 600s) | `deployment`, optional `timeout` |
+| `delay` | adds latency to a link (1 to 60000 ms) | `link`, `latency_ms`, optional `jitter_ms` |
+| `drop` | disables the link | `link` |
+| `truncate` | cuts the data on a link after a number of bytes (1 to 1048576) | `link`, `bytes` |
+| `restore` | undoes every fault still active | none |
+
+A step names a Deployment or a link by the name the operator listed, never a namespace or a URL. A
+fault step takes no claim in `## EXPECT`: put the claim on the step that observes the effect. It
+cannot carry `poll` or `save`.
+
+One small scenario. It stops the API, checks the tool fails, starts the API, waits for it, slows the
+link, checks the tool again, and restores:
+
+```json
+{"steps":[
+  {"type":"fault","name":"stop-api","op":"stop","deployment":"trades"},
+  {"type":"mcp","name":"search-down","tool":"search_trades","args":{"query":"x"}},
+  {"type":"fault","name":"api-back","op":"start","deployment":"trades"},
+  {"type":"fault","name":"api-ready","op":"wait_ready","deployment":"trades","timeout":"120s"},
+  {"type":"fault","name":"slow-link","op":"delay","link":"mcp-to-trades","latency_ms":5000},
+  {"type":"mcp","name":"search-slow","tool":"search_trades","args":{"query":"x"}},
+  {"type":"fault","name":"heal","op":"restore"}
+]}
+```
+
+`wait_ready` waits for the pods. To wait until an HTTP health URL answers again, use an `http` step
+with `poll` instead. A restart is `stop` then `start`.
+
+**Every fault is undone.** Argus writes the undo to the executor's results volume before it applies
+the fault. If it cannot write the undo, it does not apply the fault. Then:
+
+- When the chain ends, on every path (pass, fail, error, timeout or a crash in a step), every active
+  fault is undone, newest first, before the result is returned.
+- If the executor dies mid-run, the next executor undoes whatever is pending before it takes new work.
+- Two runs cannot fault the same Deployment or proxy at once. The second is refused.
+- A failed undo does not change the verdict. It shows as `restore_outcome: "failed"` on the fault
+  record and as `FAULT NOT RESTORED` on the scenario's line and in the executor log. The undo stays
+  recorded and is tried again when the executor next starts.
+
+**The operator allowlist.** In `argus-config.yaml`, at the top level beside `targets:` (not under it):
+
+```yaml
+fault_allowed_targets:
+  deployments:
+    trades: {namespace: calm-demo}
+    trades-mcp-server: {namespace: calm-demo}
+  links:
+    mcp-to-trades: {toxiproxy_api: "http://toxiproxy.calm-demo:8474", proxy: trades}
+```
+
+- A deployment entry's name is the Deployment's own name. Its namespace is required.
+- A link entry gives the address of a Toxiproxy API and the name of a proxy in it.
+- A namespace or address with `prod`, `production`, `prd` or `shared` as a segment is refused when the
+  config loads, so `argus validate-config` catches it. The refusal names the entry, not the address.
+- A scenario that names something not listed is refused before its first step runs, and nothing is
+  applied.
+
+**Link faults need a Toxiproxy.** Argus does not install one and does not rewire your system. You put a
+[Toxiproxy](https://github.com/Shopify/toxiproxy) between the caller and the callee, point the caller
+at the proxy's listen address and the proxy at the real upstream. The Toxiproxy API has no
+authentication, so keep it inside the cluster and reachable only from the executor. Argus names each
+toxic it adds `argus-<correlation id>-<n>` and removes only those. Your own toxics are not touched.
+`drop` disables the proxy and enables it again only if it was enabled before.
+
+**Deployment faults need a Kubernetes permission.** The executor's ServiceAccount needs, in the
+namespace of each listed Deployment, `get` and `patch` on `deployments/scale` and `get` on
+`deployments`. Limit the Role to the listed Deployments with `resourceNames`:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: argus-fault, namespace: calm-demo}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    resourceNames: ["trades", "trades-mcp-server"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["trades", "trades-mcp-server"]
+    verbs: ["get"]
+```
+
+Bind it to the executor's ServiceAccount with a RoleBinding. A step the Role does not allow fails
+with "forbidden". The undo needs the same permission, so a missing grant also shows as a failed
+restore.
+
+**What the report and the certificate say.** A run that applied faults lists them on the scenario's
+result: the step, the action, the target, the settings, when it was applied, when it was undone and
+whether the undo worked. A link fault also says `toxiproxy: true`. A certificate for such a run has
+format `argus-certificate/v4` and must list the faults. A run without faults gets the certificate it
+always got.
+
+**Limits you should know.**
+
+- The check that a target is not a production system matches names. A production namespace without
+  `prod`, `production`, `prd` or `shared` in its name passes it. Two things still stand in the way:
+  you must list the Deployment in `fault_allowed_targets`, and you must grant the executor the
+  permission to scale it.
+- A failed restore is recorded and shown, and tried again at the next executor start. It does not
+  raise an alert yet.
+- A fault started from the `run-direct` CLI is undone at the end of its chain. If the process crashes,
+  the undo runs only when an executor next starts.
+
+It needs an executor at v0.3.69 or later, and a control plane that accepts results that carry faults.
+Update the executor first.
 
 ### Connections that must fail (v0.3.65 or later)
 

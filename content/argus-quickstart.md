@@ -230,6 +230,17 @@ the cluster, the instance namespace, whether every image pull Secret the executo
 names exists (`tester-pullsecrets`, names only, never the Secret's contents), and whether the
 executor is registered and polling. It exits `4` on any FAIL.
 
+Four more things changed in v0.3.69:
+
+- A new check, `router-wiring`, reads the local router's state and each agent folder's `.mcp.json`
+  from disk. It warns about a folder that names a port the router no longer holds, and about a
+  `kubectl port-forward` that stopped. It contacts nothing and writes nothing.
+- `argus-config` warns about hosts that your scenarios call by full URL and the config does not
+  list, and names them. `sut-reachable` says its "ready" does not cover those hosts.
+- `executor-version` knows the fixes up to v0.3.68.
+- `argus doctor --tester` without a tester.env file still runs the cluster and namespace checks.
+  They need `--kubeconfig`, not the token.
+
 ## Where to go next
 
 - **Setting up both sessions for an app?** [Set up a tester and a builder](/argus-session-setup):

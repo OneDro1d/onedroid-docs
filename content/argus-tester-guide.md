@@ -266,6 +266,77 @@ It never removes anything, never touches a Secret's value, and leaves the execut
 A change that restarts the executor pod is announced with a `=> POD RESTART:` line. With one
 replica the executor has no pod while it rolls, and a run in flight is cut.
 
+<!-- SUT-LOGS-API-0370 START -->
+### Collecting pod logs through the Kubernetes API (v0.3.70 or later)
+
+`--collect-sut-logs` has two ways to read your system's pod logs, picked with `--sut-logs-via`:
+
+- **`node`** (the default, unchanged) renders promtail. It mounts the node's `/var/log/pods` and two
+  more host paths as `hostPath` volumes and runs as a DaemonSet, and on a local tier it also binds a
+  cluster-wide ClusterRole. Pod Security `baseline` refuses `hostPath`, and an account that is
+  namespace-admin only cannot create the ClusterRole.
+- **`api`** reads the logs through the Kubernetes API instead. Use it on a cluster that refuses the
+  `node` way.
+
+```bash
+argus render-k8s ... --collect-sut-logs --sut-logs-via api --emit-sut-access-role --out <out-dir>
+```
+
+`api` renders, in `obs.yaml` and in place of promtail, a ServiceAccount `argus-sut-logs` and a
+one-replica Deployment `sut-logs` that runs `argus collect-logs`. It has no `hostPath`, no
+`hostNetwork`, no DaemonSet and nothing cluster-scoped. It follows each running container's log over
+the Kubernetes API and ships the lines to the executor's Loki with the labels and the line text
+promtail gives them. It renders in the same three modes as promtail: bundled, `export` to a hosted
+Loki, and shared. `api` without `--collect-sut-logs` is refused by name, and so is any value but
+`node` or `api`.
+
+**The grant is the system owner's.** With `--emit-sut-access-role`, `sut-access-role.yaml` holds a
+second Role and RoleBinding, `argus-sut-logs-read`, after the existing `argus-load-environment-read`.
+Its rules are exactly `pods` get and list, and `pods/log` get, and its subject is the ServiceAccount
+`argus-sut-logs` in the instance namespace. It lets Argus read every container's log lines of every
+pod in that namespace. The owner of `--sut-namespace` applies it in their own namespace. Until they
+do, the collector prints one JSON line a minute on its stderr naming the namespace and this command,
+collects nothing, and keeps trying. No restart is needed once the Role exists.
+
+**Pod Security.** The collector pod passes `baseline`. It does not pass `restricted`: the image runs as
+root, and `runAsNonRoot` and `seccompProfile` are not set. It does set `allowPrivilegeEscalation: false`
+and drops all capabilities.
+
+**When no collector is rendered.** With `--obs adopt`, `--obs none` or `export` to BetterStack, no
+collector is rendered at all, as with promtail. In `adopt` your own pipeline ships the logs. `render-k8s`
+says so in one sentence on stderr, names the mode, and still exits `0`.
+
+**What `api` does not do.**
+
+- A container instance that crashed and was replaced before the collector saw it is not read, because
+  the API serves the current instance only.
+- It keeps no durable cursor. After the collector pod restarts, it resumes from five minutes back, not
+  from where it stopped. Lines older than that, written while it was down, are not collected.
+- When Loki refuses a batch for good (400, 413 or 422, after three tries), every entry in that push is
+  dropped and counted, including the entries of other streams in the same push. The count is printed
+  on stderr once a minute.
+- Init and ephemeral containers are not followed.
+- A line longer than 1 MiB is shipped cut there, and a line that is not valid UTF-8 is shipped with the
+  replacement character in place of the bad bytes.
+- It polls the pod list every five seconds, so a container's first seconds can be missed if it also
+  dies within them.
+- The log-field names are read as plain dotted paths. Promtail reads them as JMESPath expressions.
+
+**Moving from `node` to `api`.** `argus upgrade --instance <id> ... --collect-sut-logs --sut-logs-via api --apply`
+creates the collector and does not remove promtail, because `upgrade` never removes anything. Until
+you delete promtail, every line is shipped twice. `upgrade` prints the three commands:
+
+```bash
+kubectl -n argus-inst-<id> delete daemonset/promtail
+kubectl -n argus-inst-<id> delete configmap/promtail-config
+kubectl -n argus-inst-<id> delete serviceaccount/promtail
+```
+
+Teardown of an instance deletes `deployment/sut-logs` and `serviceaccount/argus-sut-logs` beside the
+promtail names. The Role the system owner applied is theirs: they delete it themselves to withdraw the
+access.
+<!-- SUT-LOGS-API-0370 END -->
+
 ### Storage for logs and metrics (v0.3.62 or later)
 
 On Kubernetes, the Loki that holds the execution plane's logs keeps them on a volume called
@@ -690,6 +761,419 @@ always got.
 
 It needs an executor at v0.3.69 or later, and a control plane that accepts results that carry faults.
 Update the executor first.
+
+### More claim forms for chain steps (v0.3.70 or later)
+
+These claim forms judge an `http` or `mcp` chain step, an `mcp` scenario, and the body of an `amqp`
+`consume` step. Write each as a `- step <name>: …` bullet under `### Runnable`.
+
+| To say | Write | Holds when |
+|---|---|---|
+| this amount is that number | `body has total == 42` | the field, read as a number, equals it. `1`, `1.0` and `1e0` are one value. |
+| within a tolerance | `body has total within 2% of ${saved.n}` or `body has total within 0.5 of 42` | the distance from the number is at most the tolerance. `N%` is relative to the number. A number of 0 with `%` holds only at exactly 0. An absent or non-numeric field fails. |
+| the answer lacks a word | `body not contains error` or `body not matching <regex>` | the answer text does not contain the value, or the regex does not match. |
+| a field lacks a value | `body has status not equals failed` (also `not containing` and `not matching`) | the field is there and its value does not equal, contain or match. |
+| a field is not there | `body has no secret` | the answer is JSON and the path does not resolve, or is null. |
+| every row satisfies a claim | `body every rows has status not equals failed` | every element of the list at the path satisfies the claim. `$` is the whole answer. |
+| the step answered quickly | `elapsed < 500ms` | the step's one request took less than the bound. |
+
+- **`==` and `within` keep every digit**, also above 2^53, so a long amount is compared as written.
+- **A negative on a field never passes because the field is missing.** `not equals`, `not containing`
+  and `not matching` fail on an absent field and on an answer that is not JSON. `body has no <field>`
+  is the form that asks for absence, and it fails on an answer that is not JSON.
+- **`every` over an empty list holds**, because no element breaks the claim. When the list must not be
+  empty, add a claim that it has a first element, such as `body has rows.0`. A miss names the index of
+  the first element that broke the claim.
+- **`elapsed` is for an `http` step.** Write `elapsed < 500ms` or `elapsed <= 500ms`; `<N> ms` and
+  `<N>s` are accepted too. N is a positive whole number, at most 600000 ms. It times the step's one
+  request, from just before it is sent to the moment the whole response body has been read. With
+  `poll` it judges the last attempt, not the poll's total. It is refused beside `unreachable` on the
+  same step. A miss is `failed`, not `error`, and is not reported as a timeout. Every `http` step that
+  got a response records `elapsed_ms` in the report.
+- **A plain `http` scenario run by JMeter refuses every one of these forms** when it is written. Use a
+  chain with one `http` step.
+- **They need an executor at v0.3.70 or later.** An older executor refuses the bullet by name before
+  any step runs, so the check reads `error`, never a false green. Update the executor first.
+
+### Running counts in run status (v0.3.70 or later)
+
+While a run is `running`, `author_get_run_status` shows the counts so far in `tallies`, and `planned`,
+the number of checks the run selected. The counts come from the executor's last heartbeat, which it
+sends every 30 seconds. Read them as progress, not as a result: a check that passed can still be marked
+degraded when the run ends.
+
+- It needs an executor at v0.3.70 or later. An older executor shows zeros until the end.
+- A run started with `argus run` from the CLI still reports zeros while it is going.
+- A builder sees no counts for a run that is going.
+
+### Save a JSON value and send it in a later step (v0.3.70 or later)
+
+The usual `save` keeps a scalar as text. An object or a list is refused, and a number passes through a
+float, so a long id can change. To keep a value as JSON, save it with `json`:
+
+```json
+{"steps":[
+  {"type":"http","name":"read","method":"GET","url":"${APP_URL}/items/1","save":{"res":{"json":"resource"}}},
+  {"type":"http","name":"send","method":"POST","url":"${APP_URL}/items","body":{"update":"${saved.res}"}}
+]}
+```
+
+`"save": {"res": {"json": "resource"}}` saves the value at the path exactly as written, in compact
+form: an object, a list, a string with its quotes, a number with every digit, `true`, `false` or
+`null`. `{"json": "$"}` saves the whole response.
+
+A later step places the value as a whole JSON value in its `body` (`http`) or `args` (`mcp`). Write
+the reference as the string it replaces, as in `"update": "${saved.res}"`. At run time the quotes go
+with the reference and the value arrives unquoted, as a nested object or list. A text-saved variable
+beside it is still escaped text.
+
+- A JSON-saved variable is refused, by name, in a `url`, in a header and in any claim. Save a scalar
+  with the string form for those.
+- One variable has one kind. Saving it as text in one step and with `json` in another is refused.
+- A saved value over 65536 bytes fails the step, naming the variable.
+- If the body or args are no longer JSON after binding (the reference sat inside a longer string), the
+  step is not sent and reads `not-measured`, naming the variable.
+- The value is hidden from reports like any saved value, and a body that carries it is judged by the
+  money guard as it is really sent.
+- It needs an executor at v0.3.70 or later. An older executor refuses the step by name before any
+  step runs.
+
+### A database step (v0.3.70 or later)
+
+A `db` step lets a chain look at the system's database between steps: send a request, then read the
+row. It runs one read-only `SELECT` against a PostgreSQL target in `argus-config.yaml`, and the usual
+`body …` claims judge the result. It needs an executor at v0.3.70 or later. An older executor refuses
+the whole chain by name before its first step fires.
+
+```json
+{"steps":[
+  {"type":"http","name":"place","method":"POST","url":"${INGESTION_URL}/orders","body":{"sku":"A-1"},"save":{"oid":"id"}},
+  {"type":"db","name":"row","query":"SELECT status, total FROM orders WHERE id = $1","params":["${saved.oid}"],
+   "timeout":"5s","poll":{"timeout":"30s","interval":"2s"}}
+]}
+```
+
+```
+- step place: status=201
+- step row: body has row_count == 1
+- step row: body has rows.0.status equals PAID
+```
+
+| Key | Meaning |
+|---|---|
+| `query` | Required. One statement that begins with `SELECT` or `WITH`, with a `FROM`. No second statement, and no `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `TRUNCATE`, `DROP`, `ALTER`, `CREATE` or `GRANT` outside a literal or comment. `${cid}`, `${cid8}` and `${correlation_id}` are filled in. `${saved.<var>}` in the query text is refused. |
+| `params` | A JSON array of strings, sent as bind parameters `$1…$n`. The server casts them, so `"42"` fits an integer column. The query must use exactly `$1…$n`. A parameter may carry `${saved.<var>}` (a text-saved variable) and `${correlation_id}`. |
+| `target` | A name under `targets.database_targets`. Without it the step uses `targets.database`. |
+| `timeout` | A Go duration, default `5s`, at most `30s`: the statement timeout and the client deadline. |
+| `max_rows` | Default 100, 1 to 1000. The step reads at most `max_rows + 1` rows. More than `max_rows` is an `error`, not a pass on part of the answer: add a `LIMIT`, narrow the `WHERE` or select `count(*)`. |
+| `save`, `poll`, `always` | As on an `http` step. A `poll` needs a claim, and its `interval` may not be under `1s`. |
+
+**The claims** judge one document, `{"row_count": <n>, "rows": [{"<column>": <value>, …}, …]}`. A dotted
+path indexes a row (`rows.0.status`), and `body every rows has status not equals FAILED` judges every
+row. Integers and `numeric` values keep every digit, `NULL` is `null`, timestamps are RFC 3339 strings
+in UTC, and `json` and `jsonb` columns are the JSON value itself. A step needs at least one `body …`
+claim; the smallest is `body has row_count >= 1`. `status=`, `elapsed`, `unreachable` and `broker …`
+are refused on it.
+
+**Outcomes.**
+
+- The claims hold: `passed`. They miss: `failed`, with `failed_claims` for the author. A builder sees
+  the row count only, never a claimed value, a row value or the query.
+- The server refuses the statement (unknown table, permission denied, statement timeout, a write):
+  `failed`, never "no rows", and a poll does not retry it. A builder sees the SQLSTATE only. The
+  author reads the server's own message in `body_excerpt`, with credentials and saved values removed.
+- It cannot connect, authentication is refused, or the deadline passed: `error`. A poll does not
+  retry it, and the chain stops there.
+
+**Read-only, three times.** The authoring check and the executor's preflight refuse a query that
+could write. The executor then runs it inside `BEGIN READ ONLY` and always rolls back, so PostgreSQL
+itself refuses a write that got past the first two. The real guarantee is the role: point the target
+at a read-only role. A read-only transaction stops writes to tables and sequences. It does not stop a
+function with an effect outside the data, such as `pg_terminate_backend`, `pg_cancel_backend`, an
+advisory lock or a session `set_config`. Whether the role may call those is a grant on the database,
+and Argus cannot see it in a `SELECT`.
+
+**Limits.**
+
+- PostgreSQL only. The target's `jdbc_url` must be `jdbc:postgresql://host[:port]/db`. Of its URL
+  parameters only `sslmode`, `ssl`, `currentSchema` and `ApplicationName` are read, and any other is
+  refused by name. Credentials come from the target's `username` and `password`, never from the URL.
+- The whole document is capped at 1 MiB; over it is an `error`.
+- On an instance that declares `money_handling`, a chain with a `db` step is refused unless the owner
+  lists it. See [Allow entries for every engine](#allow-entries-for-every-engine-v0370-or-later).
+- In a [comparison](/argus-compare) a chain with a `db` step still runs and its claims still judge,
+  but the rows are not recorded or compared, and a `**Steps**` entry cannot name the step.
+
+### A logs step (v0.3.70 or later)
+
+A `logs` step lets a chain look at the system's logs between steps: "after this request the service
+logged X" or "nothing logged an error for this run". It asks the Loki that the executor is configured
+with, and the usual `body …` claims judge the answer. It needs an executor at v0.3.70 or later. An
+older executor refuses the whole chain by name before its first step fires.
+
+```json
+{"steps":[
+  {"type":"http","name":"place","method":"POST","url":"${INGESTION_URL}/orders","body":{"sku":"A-1"},"save":{"oid":"id"}},
+  {"type":"logs","name":"logged","scope":"correlation","contains":"order ${saved.oid} accepted","poll":{"timeout":"30s","interval":"2s"}},
+  {"type":"logs","name":"quiet","scope":"correlation","matching":"level=(error|fatal)"}
+]}
+```
+
+```
+- step place: status=201
+- step logged: body has count >= 1
+- step quiet: body has count == 0
+```
+
+| Key | Meaning |
+|---|---|
+| `scope` | Required. `correlation`: the lines that carry this scenario's correlation id, in every stream except the observability plane's own. `source`: the lines of the streams `labels` select. |
+| `labels` | `source` only, at least one. A JSON object of label name to a literal value, matched by equality. No regex and no negation. |
+| `contains` | A literal line filter. `${cid}`, `${correlation_id}` and `${saved.<var>}` (a text-saved variable) are filled in, always as a quoted literal. |
+| `matching` | An RE2 line filter, written as a literal pattern with no `${…}`. |
+| `window` | A Go duration, at most `1h`: how far back from the moment of the query to look. The default is back to one minute before the chain started. |
+| `settle` | A Go duration, default `2s`, at most `60s`: waited before the first query. |
+| `save`, `poll`, `always` | As on an `http` step. A `poll` interval may not be under `1s`. |
+
+A `source` step needs at least one of `contains` and `matching`, because a step may not count a whole
+stream. If you set both, a line must satisfy both.
+
+**The claims** judge one document, `{"count": <n>, "lines": ["<line>", …]}`. `count` is the number of
+matching lines, and `lines` holds the first 20 in time order, each cut at 2048 bytes. Use
+`body has count >= 1` for a line that exists, `body has count == 0` for none, `body has count <= 3`,
+or `body has lines.0 containing …`. A step needs at least one `body …` claim. `status=`, `elapsed`,
+`unreachable` and `broker …` are refused on it.
+
+**Settle.** A log line is shipped after the request that caused it returns. `settle` is what stands
+between "the line does not exist" and "the line has not arrived yet". If the line can take longer,
+add a `poll`: a `count == 0` claim passes on the first attempt that sees no line.
+
+**Outcomes.**
+
+- The claims hold: `passed`. They miss: `failed`, with `failed_claims` for the author. A builder sees
+  the count only, never a line, a claimed value, `contains` or `matching`.
+- Loki is unreachable, answers with an error, or answers with something that cannot be read: `error`.
+  An unreachable log store never makes `count == 0` hold, and a poll does not retry it.
+- The query asks for at most 2000 lines. A read that returns 2000 may have been cut by Loki, so the
+  step is an `error` that tells you to narrow `contains`, `matching` or `window`. A count is never a
+  silent lower bound.
+- Each kept line has credentials and tokens removed first, and reaches an author only.
+
+**Limits.**
+
+- It reads Loki only. A scenario cannot name a URL: the step reads the Loki that the executor was
+  started with. The chain is refused before any step runs when the executor has none (`--obs none`)
+  and when the config selects BetterStack.
+- The system's own pod logs are in that Loki only if they are collected. See
+  [Collecting pod logs through the Kubernetes API](#collecting-pod-logs-through-the-kubernetes-api-v0370-or-later)
+  and the `--collect-sut-logs` option in [Installing into a Kubernetes cluster](#installing-into-a-kubernetes-cluster).
+  Without a collector `body has count == 0` holds for the wrong reason.
+- On an instance that declares `money_handling`, a chain with a `logs` step is refused unless the
+  owner lists it. See [Allow entries for every engine](#allow-entries-for-every-engine-v0370-or-later).
+- In a [comparison](/argus-compare) the `logs` step is not recorded or compared, and a `**Steps**`
+  entry cannot name it.
+
+### Allow entries for every engine (v0.3.70 or later)
+
+`money_handling: true` is the owner's switch in the system's own `argus-config.yaml`. It tells Argus:
+refuse what my `money_writes.allow` list does not name. With the switch on and no entry, a chain
+`http` step must be a plain `GET`, and every `mcp` tool call, amqp operation, `db` step, `logs` step,
+UI drive and runnable `## CLEANUP` is refused, at `argus validate-config` and again before the run
+fires anything. Without the switch, none of this applies.
+
+From v0.3.70 the owner's list can name an entry for every engine. Each entry is exact: another path,
+queue, routing key, operation or tool is refused as if it were not listed.
+
+```yaml
+money_handling: true
+money_writes:
+  allow:
+    - method: POST                   # an HTTP entry: one method and one path
+      path: /api/v1/orders/quote
+      spends: false
+    - method: POST
+      path: /api/v1/orders
+      spends: true
+      amount_field: amount           # dotted path into the JSON request body
+      max_amount: 25                 # per request, in the field's own units
+      max_per_run: 4                 # spending requests per run, across every scenario in it
+    - method: GET                    # a GET of a path that names a money word; spends must be false
+      path: /api/v1/orders/{id}      # {id} is exactly one non-empty path segment
+      spends: false
+    - engine: amqp                   # a bus step: one operation, and the names it uses
+      op: consume
+      queue: reply.inbox
+    - engine: amqp
+      op: publish                    # publish names exchange and routing_key
+      exchange: orders.events
+      routing_key: order.created
+    - engine: amqp                   # listen: the owner lists the exchange and the routing key
+      op: listen
+      exchange: orders.events
+      routing_key: order.created
+    - engine: mcp                    # one tool of one target; leave out target for the unnamed targets.mcp
+      target: shop                   # a key of targets.mcp_targets
+      tool: list_orders
+    - engine: db                     # a chain db step; leave out target for targets.database
+      target: reports                # a key of targets.database_targets
+    - engine: logs                   # a chain logs step
+```
+
+- **An HTTP entry** exempts that one method and path from the GET-only and the money-word rules, and
+  nothing else. A `{name}` placeholder is a whole path segment (`/orders/{id}`), and matches exactly
+  one non-empty segment. `GET` entries are allowed.
+- **An amqp or mcp entry is all-or-nothing** for that operation or tool. Argus cannot cap it the way
+  `max_amount` caps an HTTP body, so `spends` and the three limit fields are refused on such an entry.
+- **A `db` or `logs` entry** allows that step. `{engine: db}` covers `targets.database`, and
+  `{engine: db, target: <name>}` covers a named target.
+- **A name built at run time** (`${saved.x}`, `${cid}`, an environment variable) cannot be listed and
+  never matches. The one exception is the queue of a `listen`: Argus makes its name, so you list the
+  `listen` (exchange and routing key), and a `consume` or `queue_delete` of `"${saved.q}"` in the same
+  chain is allowed with it. `q` must be saved by `listen` steps alone.
+- **The request that is sent is what is judged.** A chain `http` step whose url holds `${saved.<var>}`
+  is checked again on the method and path it resolved to. A redirect is judged like any request: on
+  an instance that declares `money_handling`, a chain `http` step does not follow a redirect to
+  another host, to a request the list does not cover, or to a spending entry, and the step ends as
+  `error`.
+- **No entry kind exists yet** for a `fault` step, for a `ui` scenario or for a `## CLEANUP` that runs
+  something. They stay refused.
+- A malformed entry is refused when the config loads, by index (`money_writes.allow[3]: …`), so
+  `argus validate-config` reports it.
+- An executor that predates these entry kinds (`engine:`, `{name}` paths, `GET`) refuses the unknown
+  key when it loads the config, rather than ignoring it. Update the executor first.
+
+### Listen without taking (amqp, v0.3.70 or later)
+
+A `consume` on a queue that already exists takes the message: it acks it and discards it, so on a live
+system it removes a message another consumer was owed. To see the event a request caused without
+taking it, `listen` first:
+
+```json
+{"steps":[
+  {"type":"amqp","name":"tap","op":"listen","url_env":"BROKER_URL","exchange":"orders.events","routing_key":"order.created","save":{"q":"queue"}},
+  {"type":"amqp","name":"go","op":"publish","url_env":"BROKER_URL","exchange":"orders.events","routing_key":"order.created","body":{"sku":"A-1"}},
+  {"type":"amqp","name":"take","op":"consume","url_env":"BROKER_URL","queue":"${saved.q}","wait":"90s"}
+]}
+```
+
+```
+- step tap: broker accepts
+- step go: broker accepts
+- step take: body has sku equals A-1
+```
+
+- **`listen`** declares a private queue that Argus names (`argus-tap-<correlation id>-<step index>`).
+  The queue is not durable and expires after 120 seconds. It is bound to the `exchange` and
+  `routing_key` you give, both required, in the same call. The broker delivers a copy of every
+  matching publish to it, and the original consumers are untouched.
+- **`save`** is how you read the queue's name: `"save": {"q": "queue"}`. A `listen` that saves nothing
+  is refused. A later `consume`, `queue_bind`, `queue_delete` or `queue_unbind` may write
+  `"${saved.q}"`, exactly that and nothing around it, for the queue.
+- **The chain deletes the queue when it ends**, passed, failed, errored or abandoned. A delete that
+  fails never changes the verdict, and the 120-second expiry removes the queue anyway.
+- **`wait` may be up to `120s`** on a queue a `listen` step of the same chain made. On any other queue
+  a `consume` still waits at most `30s`, and still takes the message it reads.
+- **`queue_bind`** is a new operation. It takes `queue`, `exchange` and `routing_key`, and binds a
+  queue the chain declared (`force: true` for a foreign one). `listen` and `queue_bind` refuse the
+  default exchange `""`.
+- **`decode: gzip`** on a `consume` unzips the delivered body before `schema` and the body claims read
+  it. It is also automatic when the delivery says `content-encoding: gzip`. Only the exact value
+  `gzip` triggers the automatic decode, so for `x-gzip` or a list of encodings write `"decode": "gzip"`.
+  The unzipped size is capped at 1 MiB (a larger body ends the step as `error`), and a body that does
+  not unzip is a `failed` step that says so.
+- **It needs an executor at v0.3.70 or later.** An older executor refuses a chain that holds `listen`
+  or `queue_bind` before its first step fires, naming the operation. It ignores `decode`, so it judges
+  the compressed bytes. A positive body claim then fails, but a negative one (`body not contains …`)
+  holds for the wrong reason. Do not rely on a negative claim over a compressed message until the
+  executor is v0.3.70 or later.
+- A broker grant for the queue itself needs `configure`, `write` and `read` on `argus-tap-*`.
+
+<!-- MCP-GATEWAY-0370 START -->
+### mcp steps: answers a gateway wraps (v0.3.70 or later)
+
+Some gateways answer an `mcp` call with a sentence, the data between `<untrusted-data-<uuid>>` tags
+(the uuid changes on every call), and another sentence. A claim on a row cannot read that. `extract`
+cuts the data out, and claims written `body extracted …` judge it. It needs an executor at v0.3.70 or
+later.
+
+```json
+{"type":"mcp","name":"paid-orders","target":"gateway","tool":"execute_sql",
+ "args":{"query":"SELECT id, status FROM orders WHERE note = '${correlation_id}'"},
+ "extract":{"path":"result","regex":"(?s)<untrusted-data-[0-9a-f-]+>\\s*(\\[.*\\])\\s*</untrusted-data-"},
+ "unavailable":{"matching":"database_unavailable|internal server error"},
+ "poll":{"timeout":"2m","interval":"5s"}, "idempotent":true,
+ "save":{"firstId":{"json":"0.id","from":"extracted"},"rows":{"json":"$","from":"extracted"}}}
+```
+
+```
+- step paid-orders: result.isError == false
+- step paid-orders: body extracted has 0.status equals PAID
+- step paid-orders: body extracted every $ has status equals PAID
+```
+
+- **`extract`** is `{"regex": "…"}` or `{"path": "…", "regex": "…"}`. The regex is Go RE2 with exactly
+  one capture group, and no flags are added (write `(?s)` when the data spans lines). Without `path`,
+  the first group of the first match in the answer's content text is the document. With `path`, the
+  content text is parsed as JSON, the value at `path` must be a JSON string, and the regex runs on
+  that string's decoded value. Use `path` when the data sits inside a JSON string, because in the raw
+  text its quotes are escaped and a regex over it captures something that is not JSON. When the
+  answer's text is plain text, leave `path` out.
+- **The document** is parsed as JSON when it is valid JSON, so `body extracted has 0.status …`,
+  `body extracted every $ has …` and `{"json": "$", "from": "extracted"}` work on it. Otherwise it is
+  judged as text. If nothing matches, or the answer does not have the shape the check expected, the
+  step is `failed` with its own sentence, and the author reads the start of the answer in
+  `body_excerpt`. A capture over 1 MiB is an `error`.
+- **Which text a claim reads.** `body extracted <form>` is any `body <form>` judged on the extracted
+  document. A plain `body <form>` on the same step judges the answer's own text, as on a step without
+  `extract`. The `result.isError` claims are judged on the real answer first, as always.
+- **Saving from it.** A `save` entry reads the extracted document only with `"from": "extracted"`,
+  as `{"json": "<path>", "from": "extracted"}` or `{"regex": "<one group>", "from": "extracted"}`.
+  Without `from` it reads the answer. `from` accepts only `extracted`.
+- **Declared and read together.** A `body extracted …` claim or a `from` save on a step without
+  `extract` is refused, and so is an `extract` that nothing reads.
+- **`unavailable`** is `{"matching": "<regex>"}`. When the answer's content text, or the JSON-RPC
+  error text, matches, the step is `error` ("could not check"), never passed and never failed. It is
+  judged before the claims, so a claim cannot turn it into a pass or a fail, and the chain stops
+  there. There is no default pattern: nothing is unavailable unless you wrote the pattern.
+- **`poll`** works on an `mcp` step. It sends the tool call again while the answer is unavailable or
+  the claims miss, until the first pass or the deadline. A claim is required, `timeout` is at most 10
+  minutes and `interval` at least 1 second. Because every attempt sends the tool call again, the step
+  must carry `"idempotent": true`, your statement that calling the tool again is harmless. Without it
+  the step is refused when the scenario is written. An unreachable system and a transport failure are
+  not retried.
+- **Other fields.** An `mcp` step takes `type`, `name`, `transport`, `target`, `server_url`, `tool`,
+  `args`, `save`, `always`, `extract`, `unavailable`, `poll` and `idempotent`. Any other field is
+  refused by name.
+- **An executor older than v0.3.70 refuses a check that has a `body extracted …` claim**, by name
+  and before it sends anything, so the check reads `error`.
+- **A builder** sees the sentences above and the step's status. The answer, the pattern and the claims
+  go only to the author's `body_excerpt` and `failed_claims`.
+<!-- MCP-GATEWAY-0370 END -->
+
+### Smaller changes in v0.3.70
+
+- **`## TIMEOUT` on a browser (`ui`) check can be up to 300 seconds.** A scenario tagged `ui` may
+  declare it. The declared value only lengthens the limits: the per-test timeout is the longer of 60
+  seconds and the value, and the navigation timeout the longer of 30 seconds and the value. The 15
+  second action and expect timeouts stay. A `10s` or `30s` value runs exactly as before. No
+  process-level kill is added: a hung browser process is still bounded only by the browser test
+  runner's own timeouts. A `ui` step inside a chain is unchanged.
+- **A chain `http` step with a non-JSON `Content-Type` sends a JSON-string `body` as text.** When the
+  step's own `headers` declare a `Content-Type` that is not JSON (not `application/json`, not
+  `text/json`, not `…+json`; compared without regard to case, with parameters such as
+  `; charset=utf-8` ignored), a `body` that is a JSON string is sent as the string's text, unquoted
+  and unescaped, under the header you set. `"body":"a=1&b=two words"` with
+  `"headers":{"Content-Type":"application/x-www-form-urlencoded"}` puts those 15 bytes on the wire.
+  - Every other combination is unchanged: a string body with no `Content-Type` header is still the
+    quoted string under `application/json`, and an object, array, number or boolean body is its JSON
+    text whatever the header says. A `Content-Type` set only in the scenario's `## TRIGGER` headers
+    does not count. The empty string `""` sends an empty body.
+  - In a text body, `${cid}`, `${correlation_id}`, an environment `${VAR}` and `${saved.<var>}` are
+    spliced in as raw text, not JSON-escaped. A variable saved with the `json` form is spliced as its
+    JSON text. A `${saved.<var>}` that no earlier step saved is refused by name and nothing is sent.
+  - On an instance that declares `money_handling`, the guard sees a text body as a JSON string, so a
+    route listed as spending is refused a text body and it is never sent.
+  - An executor older than v0.3.70 sends the quoted JSON string, so your system sees a different body.
 
 ### Connections that must fail (v0.3.65 or later)
 

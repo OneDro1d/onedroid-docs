@@ -266,7 +266,6 @@ It never removes anything, never touches a Secret's value, and leaves the execut
 A change that restarts the executor pod is announced with a `=> POD RESTART:` line. With one
 replica the executor has no pod while it rolls, and a run in flight is cut.
 
-<!-- SUT-LOGS-API-0370 START -->
 ### Collecting pod logs through the Kubernetes API (v0.3.70 or later)
 
 `--collect-sut-logs` has two ways to read your system's pod logs, picked with `--sut-logs-via`:
@@ -335,7 +334,6 @@ kubectl -n argus-inst-<id> delete serviceaccount/promtail
 Teardown of an instance deletes `deployment/sut-logs` and `serviceaccount/argus-sut-logs` beside the
 promtail names. The Role the system owner applied is theirs: they delete it themselves to withdraw the
 access.
-<!-- SUT-LOGS-API-0370 END -->
 
 ### Storage for logs and metrics (v0.3.62 or later)
 
@@ -1088,7 +1086,6 @@ taking it, `listen` first:
   executor is v0.3.70 or later.
 - A broker grant for the queue itself needs `configure`, `write` and `read` on `argus-tap-*`.
 
-<!-- MCP-GATEWAY-0370 START -->
 ### mcp steps: answers a gateway wraps (v0.3.70 or later)
 
 Some gateways answer an `mcp` call with a sentence, the data between `<untrusted-data-<uuid>>` tags
@@ -1161,7 +1158,6 @@ later.
   and its sentence; the answer, the pattern and the claims go only to the author's `body_excerpt` and
   `failed_claims`. When the tool itself reports an error (`result.isError` is true, or a JSON-RPC
   error), the step carries the tool's raw answer for the builder too, as every `mcp` step does.
-<!-- MCP-GATEWAY-0370 END -->
 
 ### Smaller changes in v0.3.70
 

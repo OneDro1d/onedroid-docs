@@ -71,7 +71,41 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.69. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.70. Each note below links to the section that has the detail.
+
+- **More claim forms on chain steps** (v0.3.70): `body has total == 42`, `within 2% of`,
+  `body not contains`, `body has no <field>`, `body every <list> has …`, and `elapsed < 500ms` on an
+  `http` step. See
+  [More claim forms](/argus-tester-guide#more-claim-forms-for-chain-steps-v0370-or-later).
+- **Running counts, JSON saves and text bodies** (v0.3.70): a run that is going shows the counts so far
+  and `planned`; a step can save a JSON value and send it in a later step; a chain `http` step under a
+  non-JSON `Content-Type` sends a string body as text; `## TIMEOUT` governs a browser check, up to
+  300 s. See
+  [Running counts](/argus-tester-guide#running-counts-in-run-status-v0370-or-later),
+  [Save a JSON value](/argus-tester-guide#save-a-json-value-and-send-it-in-a-later-step-v0370-or-later) and
+  [Smaller changes in v0.3.70](/argus-tester-guide#smaller-changes-in-v0370).
+- **Two new chain steps: `db` and `logs`** (v0.3.70): read one row of the system's PostgreSQL database
+  with a read-only SELECT, or ask its Loki whether a log line exists, does not exist, or how many. Both
+  need an executor at v0.3.70 or later. See
+  [A database step](/argus-tester-guide#a-database-step-v0370-or-later) and
+  [A logs step](/argus-tester-guide#a-logs-step-v0370-or-later).
+- **amqp `listen`, `queue_bind` and `decode: gzip`** (v0.3.70): read the message a request caused
+  without taking it from the system's own consumer. See
+  [Listen without taking](/argus-tester-guide#listen-without-taking-amqp-v0370-or-later).
+- **Allow entries for every engine** (v0.3.70): on an instance that declares `money_handling`, the
+  owner's `money_writes.allow` list can name an HTTP route, an amqp operation, an `mcp` tool, a `db`
+  step or a `logs` step. See
+  [Allow entries for every engine](/argus-tester-guide#allow-entries-for-every-engine-v0370-or-later).
+<!-- MCP-GATEWAY-0370 START -->
+- **An `mcp` step can read data a gateway wraps in text** (v0.3.70): `extract`, claims written
+  `body extracted …`, `unavailable` and `poll`. See
+  [Answers a gateway wraps](/argus-tester-guide#mcp-steps-answers-a-gateway-wraps-v0370-or-later).
+<!-- MCP-GATEWAY-0370 END -->
+<!-- SUT-LOGS-API-0370 START -->
+- **Collect the system's pod logs through the Kubernetes API** (v0.3.70):
+  `argus render-k8s --collect-sut-logs --sut-logs-via api`, for a cluster that refuses host mounts.
+  See [Collecting pod logs through the Kubernetes API](/argus-tester-guide#collecting-pod-logs-through-the-kubernetes-api-v0370-or-later).
+<!-- SUT-LOGS-API-0370 END -->
 
 - **Fault steps: break the system under test during a run** (v0.3.69): a `fault` step in a chain
   scenario can stop, start or scale a Deployment, wait for it, or delay, cut or truncate a connection

@@ -1144,14 +1144,31 @@ later.
 - **Other fields.** An `mcp` step takes `type`, `name`, `transport`, `target`, `server_url`, `tool`,
   `args`, `save`, `always`, `extract`, `unavailable`, `poll` and `idempotent`. Any other field is
   refused by name.
-- **An executor older than v0.3.70 refuses a check that has a `body extracted …` claim**, by name
-  and before it sends anything, so the check reads `error`.
-- **A builder** sees the sentences above and the step's status. The answer, the pattern and the claims
-  go only to the author's `body_excerpt` and `failed_claims`.
+- **A capture that is empty or only whitespace** counts as an answer without the shape: the step is
+  `failed`, and nothing is judged or saved.
+- **Writing the `extract` regex.** When the answer can hold more than one block, a greedy `(.*)` spans
+  all of them and gives a mixed document on which two `contains` claims can both hold. Anchor the
+  pattern on the brackets, as in the example, or use a lazy `(.*?)`.
+- **Writing `unavailable.matching`.** Match only the gateway's outage markers, such as
+  `internal server error`, not a generic `error`. A generic pattern turns a real mistake in the query
+  (a missing table) into "could not check", and also matches a row whose value is the word error.
+- **An executor older than v0.3.70 refuses a check that has a `body extracted …` claim** or a
+  `"from": "extracted"` save, by name and before it sends anything, so the check reads `error`. It
+  ignores `unavailable` and `poll`: it judges the claims on the outage text, so a step whose body claims
+  are all negative can pass there. Pair `unavailable` with a `body extracted …` claim or a positive
+  claim on the data, and update the executor first.
+- **What a builder sees.** For a miss on a `body extracted …` claim, a builder sees the step's status
+  and its sentence; the answer, the pattern and the claims go only to the author's `body_excerpt` and
+  `failed_claims`. When the tool itself reports an error (`result.isError` is true, or a JSON-RPC
+  error), the step carries the tool's raw answer for the builder too, as every `mcp` step does.
 <!-- MCP-GATEWAY-0370 END -->
 
 ### Smaller changes in v0.3.70
 
+- **A body excerpt when a chain `http` step misses its status claim.** The author's report carries
+  `body_excerpt`: at most 512 bytes of the response body, with the instance's credentials and every
+  saved value removed first. It is absent on a pass and on a body-claim miss. A builder never sees it.
+  A plain `http` scenario run by JMeter has none.
 - **`## TIMEOUT` on a browser (`ui`) check can be up to 300 seconds.** A scenario tagged `ui` may
   declare it. The declared value only lengthens the limits: the per-test timeout is the longer of 60
   seconds and the value, and the navigation timeout the longer of 30 seconds and the value. The 15

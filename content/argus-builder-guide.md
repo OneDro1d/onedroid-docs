@@ -101,7 +101,7 @@ plus the authoring commands; you have exactly these.
 {
   "id": "HTTP-001",
   "status": "fail",
-  "assertions_enforced": ["status=200", "body contains ready"],
+  "assertions_enforced_count": 1,
   "failure": {
     "observed": "..."
   }
@@ -112,13 +112,16 @@ plus the authoring commands; you have exactly these.
 — never a structured object; `failure.expected` exists in the same shape but is the field the
 holdout strips for you, so on your reports it is simply absent, not null or empty.)
 
-`assertions_enforced` tells you what was actually checked — read it, not just the pass/fail —
-and `failure.observed` is the real response your system gave. From v0.3.51 the scenario also
-carries `observed_status`, the HTTP status your system returned (and `observed_status_codes` when
-several requests fired). A status-only check has an `assertions_enforced` count of `0`; that is
-not "nothing was checked". Work from that. You will never
-see the line that says what should have happened; the fact that `status=200` was checked, and
-your system returned `503`, is the whole of what you need to know it's wrong.
+`assertions_enforced_count` tells you how many content assertions were enforced. You get the
+count, never the text of an assertion: the text carries the expected value. `failure.observed` is
+the real response your system gave. From v0.3.51 the scenario also carries `observed_status`, the
+HTTP status your system returned (and `observed_status_codes` when several requests fired). A
+status-only check has a count of `0`; that is not "nothing was checked", because the status is
+enforced and not counted. Work from that. You will never see the line that says what should have
+happened; the fact that your system returned `503` on a check that failed is what you work from.
+
+On a run that certifies (final, rehearsal or scheduled) you get the verdict and the tallies only,
+with no row per check. The rows of those runs belong to the tester.
 
 ## Triage, blind
 

@@ -142,7 +142,9 @@ The order matters, and each step is refused by name if you skip one:
    anchored. A v3 certificate also carries `artifact_measurement`, with `state` `matched` or
    `not_measured`: whether the digest you declared was among the digests running in the system
    (a run on an executor older than v0.3.47 gets a v2 certificate, which says nothing about
-   this).
+   this). A run with `not_applicable` checks or preconditions gets a v5 certificate, and an older
+   `argus` refuses it by name; see
+   [Checks that depend on something the environment may not have](/argus-tester-guide#checks-that-depend-on-something-the-environment-may-not-have-v0372-or-later).
 
    **Is anchoring finished?** A certificate is issued as soon as any chain holds the verdict.
    Its `anchoring.status` is `in_progress` while a chain still lacks it: fetch the certificate

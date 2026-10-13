@@ -71,7 +71,26 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.70. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.72. Each note below links to the section that has the detail.
+
+- **Checks that depend on the environment** (v0.3.72): a check declares `- **Preconditions**: id=kind`
+  and `- **Depends on**: id` in its `## Metadata`. If the cluster does not enforce NetworkPolicy, the
+  dependent checks end `not_applicable` instead of `failed`, and a run where every check is
+  `not_applicable` has the verdict `not_applicable`. Such a run gets a version 5 certificate. Update the
+  executor and re-render with `argus render-k8s`. See
+  [Checks that depend on something the environment may not have](/argus-tester-guide#checks-that-depend-on-something-the-environment-may-not-have-v0372-or-later).
+- **Testing a system behind Clerk** (v0.3.72): `targets.auth` takes `type: clerk_session`, and a named
+  http target can carry its own `auth:`. The executor mints a short-lived session per run. See
+  [Testing a system behind Clerk](/argus-tester-guide#testing-a-system-behind-clerk-v0372-or-later).
+- **An `mcp` step shows its claims as written** (v0.3.72): the author's report no longer carries a value
+  your system returned. See [Smaller changes in v0.3.72](/argus-tester-guide#smaller-changes-in-v0372).
+- **Allow entries for `cleanup`, `ui` and `fault`** (v0.3.71): on an instance that declares
+  `money_handling`, `money_writes.allow` can allow a runnable `## CLEANUP` by form, a `ui` spec, and
+  `fault` steps. A refused scenario does not run its `## CLEANUP`. See
+  [Allow entries for cleanup, ui and fault](/argus-tester-guide#allow-entries-for-cleanup-ui-and-fault-v0371-or-later).
+- **Two chain fixes** (v0.3.71): an `http` step whose response body is over 1 MiB reads `error` when it
+  has a body claim or a `save`, and the chain's deadline now adds each polled step's `poll.timeout`. See
+  [Smaller changes in v0.3.71](/argus-tester-guide#smaller-changes-in-v0371).
 
 - **More claim forms on chain steps** (v0.3.70): `body has total == 42`, `within 2% of`,
   `body not contains`, `body has no <field>`, `body every <list> has …`, and `elapsed < 500ms` on an

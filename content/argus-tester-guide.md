@@ -504,6 +504,67 @@ mistyped key under `observability.pushgateway`, is refused when the config loads
 well above your Prometheus scrape interval. An older executor ignores the key and keeps every
 group.
 
+### Testing a system behind Clerk (v0.3.72 or later)
+
+A system behind Clerk accepts a session token that lives about 60 seconds, so a static
+`bearer_token` is stale before the first scenario ends. With `type: clerk_session` the executor mints
+a session itself and sends the token where the static bearer token goes: `Authorization: Bearer
+<token>` on every plain-HTTP scenario. The config holds only the **names** of two environment
+variables. Their values come from the executor's secret (`argus secrets set --key CLERK_SECRET_KEY …`),
+never from the file.
+
+```yaml
+targets:
+  http:
+    base_url: http://api.example.svc:8080
+  auth:                                    # the default for every plain-HTTP scenario
+    type: clerk_session
+    secret_key_env: CLERK_SECRET_KEY       # NAME of the variable holding the Clerk secret key
+    user_id_env: CLERK_TEST_USER_ID        # NAME of the variable holding the Clerk user id
+    jwt_template: argus-test               # optional: a Clerk JWT template (longer-lived, custom claims)
+    # allow_clerk_session_on_prod: true    # optional, default false: see "Production" below
+  http_targets:
+    admin:
+      base_url: http://admin.example.svc:8080
+      auth:                                # a named target's own auth wins for scenarios that select it
+        type: clerk_session
+        secret_key_env: CLERK_SECRET_KEY
+        user_id_env: CLERK_ADMIN_USER_ID
+```
+
+- **Use a dedicated test user.** A minted session is a real login as that user. Never use a person's
+  own account.
+- **One block, one answer.** `bearer_token` and `clerk_session` are two answers to one header, and a
+  block takes one. A named target may also carry `auth: {type: bearer, bearer_token: ${VAR}}`. An
+  `auth:` on the plain `targets.http` slot is refused: its credentials are `targets.auth`.
+- **What is minted, and when.** At the first scenario that needs it, once per run per identity. Before
+  each scenario the executor checks the token and mints a fresh one on the same session when less than
+  15 seconds, or a quarter of its life, is left. A stepped HTTP load ramp checks before each step. When
+  the run ends, also after an error or a cancel, the session is revoked.
+- **Your own `Authorization` wins.** A scenario whose TRIGGER sets an `Authorization:` header (a
+  different token, or an empty line to send none for a permission check) keeps it, and no session is
+  minted for that scenario.
+- **Chain steps do not send the default auth**, and never did. A request that must carry the session
+  identity belongs in a plain-HTTP scenario.
+- **Production.** Because the session is a real login, `argus validate-config` and a run refuse
+  `clerk_session` on an instance that looks like production: a `prod`, `production`, `prd` or `shared`
+  segment in an `http` `base_url` the block covers, or a Clerk key that starts with `sk_live_`. The
+  refusal names `allow_clerk_session_on_prod`; setting it to `true` next to the type is the explicit
+  opt-in. The default is `false`.
+- **When it fails.** A refused session or token (for example `clerk_session: could not create a
+  session: HTTP 401`) makes every affected scenario `error`, never `failed`, and nothing is sent to your
+  system. The message names a stage and a status, never a key or a token. `argus validate-config` also
+  refuses a missing `secret_key_env` or `user_id_env`, a value written where a name belongs, and a
+  variable that is unset.
+- **Never printed.** The secret key and the token appear in no log, report field or file in the
+  results directory.
+- **Limits.** The token is checked per scenario (per step in a ramp), not per request inside one JMeter
+  plan. A single scenario or load step that runs longer than the token lives sends an expired token and
+  gets 401s: use a `jwt_template` with a longer lifetime. A killed executor cannot revoke its session,
+  which then ends on Clerk's own timer.
+- **Older executors.** An executor older than v0.3.72 refuses a config with `clerk_session`, or with a
+  named target's `auth:`, by name when it loads the config. Update the executor first.
+
 ## Writing a scenario
 
 A scenario is one Markdown file, one contract, in a fixed shape:
@@ -1033,12 +1094,52 @@ money_writes:
   an instance that declares `money_handling`, a chain `http` step does not follow a redirect to
   another host, to a request the list does not cover, or to a spending entry, and the step ends as
   `error`.
-- **No entry kind exists yet** for a `fault` step, for a `ui` scenario or for a `## CLEANUP` that runs
-  something. They stay refused.
+- **A `fault` step, a `ui` scenario and a `## CLEANUP` that runs something** have no entry in v0.3.70
+  and stay refused there. From v0.3.71 they have one each: see
+  [Allow entries for cleanup, ui and fault](#allow-entries-for-cleanup-ui-and-fault-v0371-or-later).
 - A malformed entry is refused when the config loads, by index (`money_writes.allow[3]: …`), so
   `argus validate-config` reports it.
 - An executor that predates these entry kinds (`engine:`, `{name}` paths, `GET`) refuses the unknown
   key when it loads the config, rather than ignoring it. Update the executor first.
+
+### Allow entries for cleanup, ui and fault (v0.3.71 or later)
+
+On an instance that declares `money_handling`, three more kinds of entry go in the same
+`money_writes.allow` list. Without the entry, each stays refused, with the same sentence as before
+plus a clause that names the entry you could add.
+
+```yaml
+money_writes:
+  allow:
+    - engine: cleanup                # a runnable ## CLEANUP block of this form
+      form: sql                      # sql or bash; required
+    - engine: cleanup
+      form: bash
+    - engine: ui                     # a ui scenario or a ui chain step that names exactly this spec
+      spec: tests/live/argus-declared.spec.ts
+    - engine: fault                  # fault chain steps; no other field
+```
+
+- **`engine: cleanup`** with `form: sql` or `form: bash` allows a runnable `## CLEANUP` block of that
+  form. Listing the form allows whatever a block of that form does: a `sql` block is any statement
+  against `targets.database`, and a `bash` block is `sh -c` in the executor. Argus cannot check anything
+  finer. A scenario with blocks of both forms needs both entries. A `## CLEANUP` of `N/A` needs none.
+- **`engine: ui`** with `spec: <path>` allows a `ui` scenario, or a `ui` chain step, that names exactly
+  that spec. The match is on the exact string, so `./x.spec.ts` is not `x.spec.ts`. A spec named at run
+  time (`${…}`) never matches. The entry allows whatever that spec does in the browser; Argus cannot
+  bound a browser drive.
+- **`engine: fault`** allows `fault` chain steps. It does not widen what a fault may touch: the
+  top-level `fault_allowed_targets` list is still required and still checked before any step fires.
+- **A refused scenario does not clean up.** A scenario the money guard refuses before it fires runs
+  none of its `## CLEANUP` blocks, even when the list allows that form. The report records each block
+  as `not-run`, with the reason that the scenario was refused before firing.
+- **A scenario with two engine tags** (for example `mcp, chain`) is judged by the engine that runs it.
+  Earlier executors could judge it as one engine and run it as the other.
+- **A malformed entry** (a `cleanup` without `form`, a `ui` without `spec`, or a spend or limit field
+  on any of the three) is refused when the config loads, by index.
+- **Older executors.** An executor older than v0.3.71 refuses a config that holds these entries, by
+  name, when it loads the config, because `form`, `spec` and the new `engine` values are unknown to it.
+  Update the executor first.
 
 ### Listen without taking (amqp, v0.3.70 or later)
 
@@ -1188,6 +1289,26 @@ later.
     route listed as spending is refused a text body and it is never sent.
   - An executor older than v0.3.70 sends the quoted JSON string, so your system sees a different body.
 
+### Smaller changes in v0.3.71
+
+- **A response body over 1 MiB is not judged, so the step reads `error`.** A chain `http` step reads at
+  most 1 MiB (1048576 bytes) of a response body. If the body is longer and the step has a `body …`
+  claim of any form, or a `save`, the step ends `error` with a sentence that names the limit and says
+  the body was not judged. It does so on the first attempt that sees the long body, so a `poll` does
+  not go on, and nothing is saved. Before v0.3.71 the first 1 MiB was judged and saved from as though it
+  were the whole body, so a `body not contains` could pass on text past the cut. A step whose claims are
+  only `status=…` and `elapsed` is unchanged and still passes on a large download. A body of exactly
+  1 MiB is whole. If you need to check a large answer, ask for a smaller one (a filter or a page size).
+- **A polled step has room for its own poll.** The chain as a whole has a deadline. It used to be
+  `## TIMEOUT` times the number of steps, and `## TIMEOUT` is capped at 120 s, so a legal `poll.timeout`
+  of up to 10 minutes could be cut off at about 6 minutes in a three-step chain and reported as a chain
+  timeout. From v0.3.71 the deadline adds the `poll.timeout` of every polled step (`http`, `db`, `logs`
+  and `mcp`), so the poll ends with its own verdict, which names the last thing it saw. `## TIMEOUT`
+  is still capped at 120 s.
+- **The `## CLEANUP` of a refused scenario is not run**, and a scenario with two engine tags is judged by
+  the engine that runs it. See
+  [Allow entries for cleanup, ui and fault](#allow-entries-for-cleanup-ui-and-fault-v0371-or-later).
+
 ### Connections that must fail (v0.3.65 or later)
 
 `- step <name>: unreachable` is a claim for a connection that must not work, such as a
@@ -1254,6 +1375,103 @@ A scenario's `## TIMEOUT` is enforced while it runs: each request (each step, in
 takes longer than the timeout fails, and the failure names the timeout. A check that passed
 before this was enforced, but answers slower than its `## TIMEOUT`, turns red after the update.
 Set the value the scenario really needs.
+
+### Checks that depend on something the environment may not have (v0.3.72 or later)
+
+Some checks only mean something where a mechanism exists. A check that a denied client must not
+connect, on a cluster that does not enforce NetworkPolicy, goes red because of the cluster and not
+because of your system. Filing that as `failed` says something false about the system, and filing it
+as `errored` says something false about the instrument. A **precondition** is how a check says what it
+needs, and how Argus says the need was not met.
+
+Declare it in the check's `## Metadata`, in two lines:
+
+```markdown
+## Metadata
+- **ID**: NP-001
+- **Layer**: Permissions
+- **Tags**: networkpolicy
+- **Preconditions**: np-in=networkpolicy.ingress_enforced, np-out=networkpolicy.egress_enforced
+- **Depends on**: np-in
+```
+
+- **`Preconditions`** is a comma-separated list of `id=kind` pairs. An id starts with a lower-case
+  letter or digit, is followed by lower-case letters, digits, `_` or `-`, is at most 63 characters, and
+  is unique in the file. The kind comes from a closed list of two:
+  `networkpolicy.ingress_enforced` and `networkpolicy.egress_enforced`. An unknown kind is refused by
+  name, with the nearest one offered. You cannot supply probe code.
+- **`Depends on`** is a comma-separated list of ids. Each must be declared in the same file's
+  `Preconditions`; an id that is not declared is a validation error.
+- It works on any scenario, whether a chain, an `mcp` check or an `http` check.
+- Both lines are part of the check, so they are sealed with the set. Changing either changes the
+  set's hash. A check with neither line is exactly as it was before.
+
+**What happens in a run.** Before the checks that depend on a precondition, the executor probes it
+once, in its **own** namespace and never in your system's namespace. It creates a listener pod, a
+one-shot client pod and the allow and deny NetworkPolicies, reads whether the client could connect, and
+deletes everything it created, also when the run fails or is cancelled. The probe has a positive
+control (the client connects when policy allows it) and a negative control (the client is refused once
+a deny policy selects the listener or the client). It ends in one of three results:
+
+| Result | Meaning | The checks that depend on it |
+|---|---|---|
+| `holds` | the positive control connected and the negative control was refused | run as normal |
+| `absent` | the positive control connected and the negative control was **not** refused: the mechanism does nothing here | are not executed and end **`not_applicable`**, with the precondition id and both observations |
+| `broken` | the positive control failed, the probe could not be set up, or the negative control could not be trusted | are not executed and end **`errored`**, never `not_applicable` |
+
+`broken` never excuses a check. If a probe that was broken could make a check "not applicable", that
+would be a way to skip any check. If the cluster already has a policy that admits the probe's traffic,
+a deny cannot close it, so the probe reads `broken` and names the policy.
+
+**`not_applicable` is its own outcome.** It is not folded into `errored`, and it is never counted as a
+pass or a fail. The tallies add up as `passed + failed + errored + degraded + not_applicable == total`.
+The run's verdict is:
+
+| The run | Verdict |
+|---|---|
+| any failure or error | `failed`, as before |
+| passed checks and `not_applicable` checks | `passed`, with the `not_applicable` count shown beside it |
+| every check `not_applicable` | `not_applicable`, never `passed`, because nothing was verified |
+
+A run where every check is `not_applicable` still has the status `completed`, since it did finish.
+The report and the run view say `not applicable: <precondition> absent` with both observations.
+
+**The certificate.** The results of the probes are bound into the evidence hash. A run that carries
+preconditions or `not_applicable` checks gets a **version 5** certificate. A run without them keeps its
+version 1 to 4 certificate unchanged. The version 5 certificate adds a `not_applicable` count to the
+anchored tallies, the `not_applicable` verdict, and the list of preconditions. `argus certificate
+verify` checks that the counts add up, that a run where every check is `not_applicable` is not a pass,
+and that each `not_applicable` count is explained by a recorded `absent` precondition. It says plainly
+that the probe results are what the executor reported. An older `argus` refuses a version 5
+certificate by name and never reads one with the count dropped.
+
+**Set it up.**
+
+1. Update the executor to v0.3.72 or later. An older executor ignores `Depends on` and runs the check.
+2. Re-render the instance's manifests with `argus render-k8s`. The new executor Role grants pods and
+   NetworkPolicies in the instance's own namespace, and the namespace's `allow-same-namespace` policy
+   no longer admits the probe's listener. An instance rendered before v0.3.72 reads `broken` for an
+   ingress precondition, with a `forbidden` reason, until it is re-rendered. It never reads
+   `absent`.
+3. Optional, top level, never under `targets:`: `precondition_probe` sets `image`, `ready_timeout`,
+   `connect_timeout`, `attempts` and `settle`. The default image is `busybox:1.36.1` pinned by digest.
+   Set `image` if the executor's namespace cannot pull it, for example a mirror in your own registry,
+   and pin yours by digest too. A mistyped key is refused by name.
+
+```yaml
+precondition_probe:
+  image: registry.example.com/mirror/busybox@sha256:<digest>
+  settle: 5s                # pause after a policy changes, for the policy engine to program it
+```
+
+### Smaller changes in v0.3.72
+
+- **An `mcp` chain step shows its claims as written.** The author's report lists the claims a step
+  judged. For an `mcp` step it used to print them with the saved value filled in, so the report, which
+  is relayed to and kept by the control plane, could carry a value your system returned (an e-mail
+  address, for example). It now prints `${saved.<var>}` unfilled, as the other step types already did.
+  The claim is judged exactly as strictly as before. `${cid}` and `${correlation_id}` still show
+  this run's own id. The builder's reduced report still leaves the claim list out.
 
 ## Monitor schedules
 

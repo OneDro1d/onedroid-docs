@@ -227,6 +227,8 @@ These pages describe Argus v0.3.72. Each note below links to the section that ha
   read a red.
 - **[Builder guide](/argus-builder-guide)** — what you may call, what you cannot see and why,
   and how to read a redacted verdict.
+- **[Argus on GitHub](/argus-github)**: install the GitHub app, link a repository, and every
+  successful deployment runs your checks and puts the verdict on the commit.
 - **[Comparing systems](/argus-compare)**: run one sealed set of checks against an old system and
   its rewrite, or two versions of one system, and read where their outputs differ.
 - **[Ledger and certificates](/argus-ledger)** — certify a build, see every anchor on the Proof

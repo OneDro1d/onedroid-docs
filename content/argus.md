@@ -12,6 +12,23 @@ events, and its database state, from a process that sits next to it. The output 
 you can trust precisely because the agent fixing the system was never shown what would be
 checked.
 
+## Why it exists
+
+Testing was always the expensive part of building software, so it was the part that got cut.
+For years companies spent between a fifth and a third of their IT budget on quality assurance
+and testing, and when it was first measured at 18%, Capgemini's World Quality Report called
+that ["an indication of insufficient attention on quality"](https://www.capgemini.com/insights/expert-perspectives/15-years-of-world-quality-report-a-journey-in-quality-engineering-and-testing/).
+Coding agents now build a feature for a few dollars, and an agent that tests its own work tests
+its own reading of the ticket.
+
+Argus brings independent testing down to the same order of magnitude as the coding. In one
+measured experiment, Claude Code built a feature for $1.01 to $1.97 a run, and the tester's
+session, which wrote the checks once for the whole feature, cost about $5.30; the checks then
+stay as regression checks
+([the experiment and its limits](https://onedroid.ai/case-study-claude-code-alone-vs-tester)).
+No test proves code free of bugs. What Argus keeps fixed is the record: which checks ran,
+against which build, sealed before the build, and anyone can run them again.
+
 ## The holdout
 
 Argus separates two roles, deliberately, and keeps them apart:

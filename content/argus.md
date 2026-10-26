@@ -17,9 +17,9 @@ the agent fixing the system was never shown what would be checked.
 Yes, and it does more than a usual end-to-end suite. Like any end-to-end test, it exercises
 the running system with nothing mocked. Four things differ:
 
-- **Nobody writes the suite by hand.** A [tester](/argus-tester-guide), a person or an agent
-  who is not the builder, writes the scenarios from the ticket and the acceptance criteria,
-  before the build. They stay as regression checks.
+- **Plain scenarios, not test scripts.** A [tester](/argus-tester-guide), your QA engineer or
+  an agent but never the builder, writes the scenarios from the ticket and the acceptance
+  criteria, before the build. They stay as regression checks.
 - **It costs about what the AI coding costs.** In one measured experiment the tester's session
   came to about $5.30 for the feature, $1.77 a run
   ([the experiment and its limits](https://onedroid.ai/case-study-claude-code-alone-vs-tester)).

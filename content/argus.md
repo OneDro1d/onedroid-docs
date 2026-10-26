@@ -20,9 +20,9 @@ the running system with nothing mocked. Four things differ:
 - **Plain scenarios, not test scripts.** A [tester](/argus-tester-guide), your QA engineer or
   an agent but never the builder, writes the scenarios from the ticket and the acceptance
   criteria, before the build. They stay as regression checks.
-- **It costs about what the AI coding costs.** In one measured experiment the tester's session
-  came to about $5.30 for the feature, $1.77 a run
-  ([the experiment and its limits](https://onedroid.ai/case-study-claude-code-alone-vs-tester)).
+- **Faster and cheaper than end-to-end testing by hand.** No test scripts to write and keep
+  alive, and nobody clicking through the app before each release. The scenarios are written
+  once per feature, before the build, and run as often as you need.
 - **The coding agent can't game it.** A builder's credential can ask for a run and read the
   verdict, and cannot read a scenario's expected values ([the holdout](#the-holdout)).
 - **Load and continuous runs come with it.** The same scenarios run under load against a

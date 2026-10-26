@@ -14,7 +14,20 @@ If someone has handed you a kit repo, start here.
 
 ## Before you start
 
-On the machine you are setting up:
+**You do not have to be a developer to install a kit, and you do not have to know any shell
+commands.** The whole of the setup is one sentence typed into Claude Code; everything below is
+about what has to be true first.
+
+Three things must be on the machine you are setting up: **Claude Code**, **git**, and the
+**GitHub CLI** (`gh`), signed in to an account that can see the kit. `jq` and `python3` come with
+most systems and the installer tells you if they are missing.
+
+Rather than checking by hand, open Claude Code on that machine and ask it:
+
+> **"Check whether this machine has what a Dark Factory kit needs: git, jq, bash, python3, the
+> GitHub CLI signed in, and Claude Code itself. Tell me what is missing."**
+
+If you would rather run the check yourself, this is what it does:
 
 ```sh
 for c in git jq bash python3 gh claude; do command -v "$c" >/dev/null && echo "ok       $c" || echo "MISSING  $c"; done
@@ -22,14 +35,11 @@ gh auth status
 claude -p 'Reply with the single word: ok' --output-format text
 ```
 
-Every tool should print `ok`, `gh auth status` should show an account that can see the kit,
-and the last command should print `ok`.
-
 Your kit may also need access that no file can grant you — org membership, a hub, a token, a
 board. A well-formed kit states its own list, with a self-check per row; read its `KIT.md`
-first. **Granting any of it is somebody else's act, deliberately:** a kit that could grant its
-own access would be a kit that could quietly widen it. If a check fails, ask — do not route
-around it.
+first, or ask Claude Code to read it to you. **Granting any of it is somebody else's act,
+deliberately:** a kit that could grant its own access would be a kit that could quietly widen
+it. If a check fails, ask — do not route around it.
 
 ## The install is one instruction
 
@@ -100,7 +110,9 @@ the totals, and fix the placeholders at the "add this machine" step.
 ## Taking an update
 
 Later, when the method or your organisation's layer has moved, taking it is a one-line SHA bump
-in the record, then an install.
+in the record, then an install. In Claude Code that is one sentence too:
+
+> **"Update my kit to the current version and prove it worked."**
 
 ⚠️ **The pin and the machine are two different facts.** Moving the pin is a declaration; only
 the install makes it true of a box. If you repin on someone's behalf, the honest report is

@@ -1,16 +1,33 @@
 ---
-title: Argus — end-to-end tests your builder can't see
+title: Argus — automated end-to-end testing for AI-written code
 nav: What Argus is
-description: End-to-end tests run against your real, deployed system and judged on its own logs — with the builder held to a genuine holdout.
+description: Automated end-to-end tests for AI-written code, run against your real, deployed system and judged on its own logs — written by a separate tester, never shown to the builder, and runnable under load and on a schedule.
 section: Argus
 order: 10
 ---
 
-Argus runs end-to-end tests against a real, deployed system — never a mock — and judges the
-result the way an operator would: by reading the system's own structured logs, its saga
-events, and its database state, from a process that sits next to it. The output is a report
-you can trust precisely because the agent fixing the system was never shown what would be
-checked.
+OneDroid Argus is automated end-to-end testing for AI-written code. It runs end-to-end tests
+against a real, deployed system — never a mock — and judges the result the way an operator
+would: by reading the system's own structured logs, its saga events, and its database state,
+from a process that sits next to it. The output is a report you can trust precisely because
+the agent fixing the system was never shown what would be checked.
+
+## Is it end-to-end testing?
+
+Yes, and it does more than a usual end-to-end suite. Like any end-to-end test, it exercises
+the running system with nothing mocked. Four things differ:
+
+- **Nobody writes the suite by hand.** A [tester](/argus-tester-guide), a person or an agent
+  who is not the builder, writes the scenarios from the ticket and the acceptance criteria,
+  before the build. They stay as regression checks.
+- **It costs about what the AI coding costs.** In one measured experiment the tester's session
+  came to about $5.30 for the feature, $1.77 a run
+  ([the experiment and its limits](https://onedroid.ai/case-study-claude-code-alone-vs-tester)).
+- **The coding agent can't game it.** A builder's credential can ask for a run and read the
+  verdict, and cannot read a scenario's expected values ([the holdout](#the-holdout)).
+- **Load and continuous runs come with it.** The same scenarios run under load against a
+  message broker or an HTTP target ([Load testing](/argus-tester-guide#load-testing)), and on a
+  schedule ([the two modes](#the-two-modes)).
 
 ## Why it exists
 

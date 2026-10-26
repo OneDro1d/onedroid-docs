@@ -34,9 +34,11 @@ something else.
 
 ## OneDroid Argus — end-to-end tests your builder can't see
 
-OneDroid Argus runs end-to-end tests against your real, deployed system, never a mock, and
-judges the result from the system's own logs, events and database state. The agent fixing
-the system is never shown what will be checked, so a green run means something.
+OneDroid Argus is automated end-to-end testing for AI-written code. It runs end-to-end tests
+against your real, deployed system, never a mock, and judges the result from the system's own
+logs, events and database state. A separate tester writes the tests, and the agent fixing the
+system is never shown what will be checked, so a green run means something. The same tests
+run under load and on a schedule.
 
 [What OneDroid Argus is](/argus) · [Set up a tester and a builder](/argus-session-setup) ·
 [Quickstart](/argus-quickstart) · [Tester guide](/argus-tester-guide) ·

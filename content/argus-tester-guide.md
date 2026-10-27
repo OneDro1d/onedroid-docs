@@ -362,6 +362,58 @@ affected: they do not live in the pod.
   Pushgateway saves about once a minute, so a node crash can lose up to a minute of metrics.
 - **Teardown** of an instance never deletes anything outside the instance's own namespace.
 
+### Reading an environment's shared Loki (v0.3.74 or later)
+
+Some environments already ship every cluster's pod logs into ONE Loki. Their promtail labels only
+`cluster`, `namespace`, `pod`, `container`, `node` and `app`, with no per-instance labels. To read
+the system's logs from there instead of from a Loki of the instance's own, say which cluster the
+instance runs on:
+
+```yaml
+observability:
+  loki:
+    url: http://loki.observability.svc:3100
+    shared_cluster: cluster-a      # the shared promtail's `cluster` label for this cluster
+```
+
+The executor then selects lines with `{cluster="cluster-a", namespace="<the SUT namespace>"}`.
+It works out `level`, `correlation_id` and the saga marker from each line when it queries,
+for `logs` steps, `get_sagas`, `tail_logs` and the saga-presence check. In a `logs` step's
+`labels`, `service` selects the container. `cluster` and `namespace` are refused, because the
+instance's configuration already fixes them.
+
+**Declare the line format.** Those fields exist only if the query can parse the system's lines.
+The default parser is JSON. `log_format: logfmt` selects logfmt. For a system that logs plain
+text, give `log_regex`: an RE2 expression with named groups, of which `level`, `correlation_id`
+and `saga_marker` are read.
+
+```yaml
+    # 10:06:24.852569 main-engine WARN: [Tick] skipping duplicate ack
+    log_regex: '^(?P<time>\S+) (?P<service>\S+) (?P<level>[A-Z]+): '
+```
+
+The level value is what the system writes: `labels: {level: WARN}`, not `warn`. When a `logs`
+step that filters on such a field finds no line, OneDroid Argus asks Loki once how many lines the
+window holds and how many the parser reads. If there are lines but none parsed, the step is
+`error`, and the message gives the format and the line count, never a line's content. Otherwise
+a `count == 0` claim would pass on lines the format cannot read.
+
+**What `argus validate-config` refuses and warns about.** Observed with the v0.3.74 CLI:
+
+- `log_regex` without `shared_cluster` is refused: *"observability.loki.log_regex is only read in
+  shared-Loki mode (observability.loki.shared_cluster)"*. The pipelines an instance runs itself
+  parse JSON and logfmt only, so the key would otherwise be ignored silently.
+- A `log_regex` with no named group is refused: *"needs at least one named group"*.
+- With `shared_cluster` set, the config is valid and two warnings are printed. First, a shared
+  promtail drops lines above its per-node read rate, and OneDroid Argus cannot see a drop, so keep
+  the system's log volume under that rate during a check. Second, it batches pushes, so a line
+  reaches Loki seconds after it was logged. Keep a `logs` step's settle at 2 s or more, and use
+  `poll` for a claim that a line exists.
+
+A `logs` step whose selector finds no stream at all in its window is `error`, never a
+`count == 0` pass. Not covered: the Grafana dashboards still filter by the per-instance labels,
+so they show nothing for a shared-Loki instance.
+
 ## Configuring what your environment shows
 
 Three optional blocks in `argus-config.yaml` change what the Argus app shows for your

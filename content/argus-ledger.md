@@ -98,7 +98,7 @@ under "For AI agents".
 
 These are the tester's tools. A tester agent connects with an author token (see the
 [Tester guide](/argus-tester-guide)). A **builder** agent has none of them and never needs them:
-it sees only the verdict, through `runner__get_report`.
+it sees only the verdict, through `runner_get_report`.
 
 The order matters, and each step is refused by name if you skip one:
 

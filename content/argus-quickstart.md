@@ -102,9 +102,11 @@ the **author token** and **builder token** are a person's; `ARGUS_EXECUTOR_SECRE
 > person's author token. CLI releases after v0.3.39 read the new names and still accept the old
 > ones, with a warning. v0.3.39 and earlier read only the old names.
 
-Most commands on the in-env side refuse outright if the two hat secrets aren't both configured.
-Four local checks need no token at all: `validate-scenario`, `validate-config`, `package-check`
-and `propose-from-repo`. Everything else, `list-scenarios` for example, refuses:
+The commands that read or run scenarios on the in-env side refuse outright if the two hat secrets
+aren't both configured. Local checks and setup commands need no token at all, for example
+`validate-scenario`, `validate-config`, `package-check`, `propose-from-repo`, `calm import`,
+`preflight`, `doctor` and `argus version`, and neither do a third party's `certificate verify` and
+`anchor verify`. A command that reads or runs scenarios, `list-scenarios` for example, refuses:
 
 ```bash
 argus list-scenarios
@@ -128,12 +130,16 @@ locally at onboarding, into the test-agent's own environment, and is not the sam
 `odts_` author token.
 
 **What a builder needs:** a **builder token** (**Settings → API Tokens**, then **Generate builder
-token**), which reaches only the `runner__*` tools. A builder who calls the CLI next to the system
-uses the runner hat instead: `ARGUS_RUNNER_TOKEN`'s value.
-It reaches the same six-tool runner surface the author hat also has (`validate-config`, `run`,
-`get-report`, `get-sagas`, `tail-logs`, `get-dashboard-url`) — never the scenario-authoring
-commands — and every answer comes back redacted: no scenario content, no expected values. It
-never needs the cloud session at all, because a builder never calls a `cloud-*` command.
+token**), which reaches only the control plane's `runner_*` tools: `runner_run`,
+`runner_get_report`, `runner_list_alerts`, `runner_validate_config` and
+`runner_get_dashboard_url`. `get-sagas` and `tail-logs` are not on that path
+([Builder guide](/argus-builder-guide#the-tools)).
+A builder who calls the CLI next to the system uses the runner hat instead: `ARGUS_RUNNER_TOKEN`'s
+value. That hat reaches the same six-tool runner surface the author hat also has
+(`validate-config`, `run`, `get-report`, `get-sagas`, `tail-logs`, `get-dashboard-url`). Neither
+path reaches the scenario-authoring commands, and every answer comes back redacted: no scenario
+content, no expected values. A builder never needs the cloud session, because a builder never
+calls a `cloud-*` command.
 
 `ARGUS_RUNNER_TOKEN` is minted per execution-plane instance, not per person — see
 [Tester guide § Enrolling an instance](/argus-tester-guide#enrolling-an-instance) if you are
@@ -242,10 +248,11 @@ Three more things changed in v0.3.53:
   accepted the session with the renewed token.
 
 On a tester machine, use `argus doctor --tester` instead (v0.3.47 or later). It prints one line
-per onboarding phase, each PASS, FAIL or SKIP: the token, the tools it reaches, the workspace,
+per onboarding phase, each PASS, WARN, FAIL or SKIP: the token, the tools it reaches, the workspace,
 the cluster, the instance namespace, whether every image pull Secret the executor's Deployment
-names exists (`tester-pullsecrets`, names only, never the Secret's contents), and whether the
-executor is registered and polling. It exits `4` on any FAIL.
+names exists (`tester-pullsecrets`, names only, never the Secret's contents), whether the
+executor is registered and polling, and whether its version is at or above the one the control
+plane recommends. It exits `4` on any FAIL; a WARN does not change the exit code.
 
 Four more things changed in v0.3.69:
 

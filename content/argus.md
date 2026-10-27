@@ -253,6 +253,11 @@ These pages describe Argus v0.3.72. Each note below links to the section that ha
 
 ## Where to go next
 
+- **Get an account** — sign up at [argus-dev.onedroid.ai](https://argus-dev.onedroid.ai) (e-mail,
+  Google or Microsoft). It is the evaluation control plane: a test environment with no promise that
+  data is kept, so keep production data out of it. The runner and CLI are open source at
+  [github.com/OneDro1d/argus-runner](https://github.com/OneDro1d/argus-runner). Stuck at any step?
+  `argus doctor` names the cause and prints the fix ([quickstart](/argus-quickstart)).
 - **[Set up a tester and a builder](/argus-session-setup)** — the order to set the two sessions up
   in, and the tokens each one holds.
 - **[Argus quickstart](/argus-quickstart)** — the CLI, the credentials, and the first read-only

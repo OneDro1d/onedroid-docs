@@ -17,8 +17,15 @@ has that order and the token table.
 The CLI is the same binary as the in-environment test server. If `argus version` already
 answers, skip to the explanation below it. If not, install it from a GitHub release.
 
-**Get access first.** The Argus release repository is private. Ask your Argus operator for read
-access to it, and log in with the GitHub CLI (`gh auth login`) as an account that has it. The
+**No operator yet?** The runner and the CLI are open source. Build the CLI from
+[github.com/OneDro1d/argus-runner](https://github.com/OneDro1d/argus-runner) with
+`go build -o argus ./cmd/argus`, or pull the public image `ghcr.io/onedro1d/argus-runner:main`. That
+build has every command this page uses (`cloud-login`, `doctor`, `preflight`, `cloud-create-workspace`,
+`render-k8s`, `certificate`); it refuses only `serve --mode control`, which is the hosted part. Then skip to
+[step 3](#3-point-the-cli-at-your-control-plane).
+
+**Get access first** (the full release). The Argus release repository is private. Ask your Argus operator
+for read access to it, and log in with the GitHub CLI (`gh auth login`) as an account that has it. The
 commands below name that repository as `<argus-repo>`; your operator gives you its `owner/name`.
 
 **Download the latest release rather than copying a version number from a page**, including this
@@ -137,6 +144,16 @@ standing one up.
 ```bash
 export ARGUS_CP_URL=<your-argus-control-plane-url>
 argus cloud-login --control-plane "$ARGUS_CP_URL" --scope author
+```
+
+**No control plane of your own?** Use the hosted evaluation one, `https://argus-dev.onedroid.ai`.
+Create your account there first (**Sign up**: e-mail and password, Google or Microsoft); the sign-in
+below then asks you to approve the CLI with that account. It is a test environment, with no promise
+that data is kept, so keep production data out of it. Once signed in, make the workspace your app
+will live in, in the app (**Settings → My workspaces → Create workspace**) or from the CLI:
+
+```bash
+argus cloud-create-workspace --control-plane "$ARGUS_CP_URL" --name <name>
 ```
 
 `--scope` is required from v0.3.41 on, and there is no default: `author` for a tester or

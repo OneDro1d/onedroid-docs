@@ -57,7 +57,9 @@ be treated as leaked.
 
 ## Before you start
 
-- An Argus account on your control plane, and one **workspace per app**. Create it on the
+- An Argus account on your control plane, and one **workspace per app**. On the hosted evaluation
+  control plane, sign up at [argus-dev.onedroid.ai](https://argus-dev.onedroid.ai) (e-mail, Google or
+  Microsoft; a test environment, so keep production data out of it). Create the workspace on the
   **Settings → My workspaces** page (**Create workspace**); everything for that app (instances, checks, runs, tokens) lives in it.
 - A cluster where the app's execution plane will run, ideally where the app lives. The execution
   plane only needs outbound HTTPS to your app and to the control plane

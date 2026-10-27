@@ -121,8 +121,8 @@ The order matters, and each step is refused by name if you skip one:
 4. **Run it.**
    `author_request_run` with `mode: "final"` and `artifact_digest` (the digest of the artefact
    being certified). When the result arrives, the verdict is anchored as version 3. To keep
-   re-certifying a live system, `author_set_schedule` re-runs the sealed set on an interval, and
-   each run is anchored as the next version.
+   re-certifying a live system, `author_set_schedule` re-runs the sealed set on an interval of
+   15 minutes or more (a shorter one is refused), and each run is anchored as the next version.
 
    Before a `final` or `scheduled` run starts, the executor reads the image digests that are
    actually running in the system under test (v0.3.47 or later). If your `artifact_digest` is

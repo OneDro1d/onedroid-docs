@@ -90,8 +90,12 @@ plane outbound only: your system's network needs egress, never an inbound route.
 | **Run** | whichever scenarios you ask for, once | authoring and iterating |
 | **Monitor** | your reviewed scenario set, on a schedule | watching a live system stay healthy |
 
+These are the two ways to use Argus. They are not the `mode` a run request names: a run you
+start by hand has mode `build` (to iterate) or `final`, `rehearsal` or `scheduled` (to certify),
+and comparing two builds is its own call, `author_run_comparison` ([Comparing](/argus-compare)).
+
 `Monitor` is a schedule: set it once and your system is tested continuously without you
-driving it by hand. See [Tester guide § Monitor schedules](/argus-tester-guide#monitor-schedules)
+driving it by hand. Each tick queues a `build` run of your reviewed set, marked with the intent `monitor`. See [Tester guide § Monitor schedules](/argus-tester-guide#monitor-schedules)
 for the exact call — set `mode` to `"monitor"` on every schedule you create.
 
 ## Certify, and let anyone check it
@@ -110,7 +114,8 @@ These pages describe Argus v0.3.72. Each note below links to the section that ha
 - **Checks that depend on the environment** (v0.3.72): a check declares `- **Preconditions**: id=kind`
   and `- **Depends on**: id` in its `## Metadata`. If the cluster does not enforce NetworkPolicy, the
   dependent checks end `not_applicable` instead of `failed`, and a run where every check is
-  `not_applicable` has the verdict `not_applicable`. Such a run gets a version 5 certificate. Update the
+  `not_applicable` has the verdict `not_applicable`. A run with any `not_applicable` check, or with
+  precondition results, gets a version 5 certificate. Update the
   executor and re-render with `argus render-k8s`. See
   [Checks that depend on something the environment may not have](/argus-tester-guide#checks-that-depend-on-something-the-environment-may-not-have-v0372-or-later).
 - **Testing a system behind Clerk** (v0.3.72): `targets.auth` takes `type: clerk_session`, and a named

@@ -45,7 +45,7 @@ names are used on every Argus page.
 | Name | Who holds it | Where it comes from | Where it goes |
 |---|---|---|---|
 | **Author token** | the tester | **Settings → API Tokens**, then **Generate author token**, bound to the app's workspace | the environment variable `ARGUS_CP_AUTHOR_TOKEN` in the tester's environment |
-| **Builder token** | the builder | **Settings → API Tokens**, then **Generate builder token**, bound to the app's workspace | the builder's own environment; it reaches only the `runner__*` tools |
+| **Builder token** | the builder | **Settings → API Tokens**, then **Generate builder token**, bound to the app's workspace | the builder's own environment; it reaches only the `runner_*` tools |
 | `ARGUS_EXECUTOR_SECRET` | the execution plane | generated when the execution plane is installed | the Secret the install renders, in the execution plane's namespace |
 | `ARGUS_RUNNER_TOKEN` | the execution plane | generated when the execution plane is installed | the same Secret |
 
@@ -103,12 +103,12 @@ app. It needs:
    In the builder's own notepad directory, `argus builder init <app>` (v0.3.47 or later) writes
    the same plumbing under `.argus-builder/`, with an empty `ARGUS_BUILDER_TOKEN_<APP>=` line in
    `builder.env` for you to fill in. Run it again after you paste the token: it asks the control
-   plane which tools that token reaches, and fails (exit 3) unless every one is a `runner__*`
+   plane which tools that token reaches, and fails (exit 3) unless every one is a `runner_*`
    tool. Only then does it write `.mcp.json`.
 2. **A runner id from the tester.** The id pairs the builder with that execution plane; it is an
    identifier, not a secret.
-3. **The [Builder guide](/argus-builder-guide).** The builder runs the checks with `runner__run`,
-   reads `runner__get_report`, and watches `runner__list_alerts` for reds. Each report shows
+3. **The [Builder guide](/argus-builder-guide).** The builder runs the checks with `runner_run`,
+   reads `runner_get_report`, and watches `runner_list_alerts` for reds. Each report shows
    what the app did, never what was expected.
 
 ## Tester brief (template)

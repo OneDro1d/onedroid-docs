@@ -21,7 +21,7 @@ the running system with nothing mocked. Four things differ:
   an agent but never the builder, writes the scenarios from the ticket and the acceptance
   criteria, before the build. They stay as regression checks.
 - **Faster and cheaper than end-to-end testing by hand.** No test scripts to write and keep
-  alive, and nobody clicking through the app before each release. The scenarios are written
+  alive (except a spec file for a browser check), and nobody clicking through the app before each release. The scenarios are written
   once per feature, before the build, and run as often as you need.
 - **The coding agent can't game it.** A builder's credential can ask for a run and read the
   verdict, and cannot read a scenario's expected values ([the holdout](#the-holdout)).
@@ -32,7 +32,7 @@ the running system with nothing mocked. Four things differ:
 ## Why it exists
 
 Testing was always the expensive part of building software, so it was the part that got cut.
-For years companies spent between a fifth and a third of their IT budget on quality assurance
+For years companies spent between 23% and 35% of their IT budget on quality assurance
 and testing, and when it was first measured at 18%, Capgemini's World Quality Report called
 that ["an indication of insufficient attention on quality"](https://www.capgemini.com/insights/expert-perspectives/15-years-of-world-quality-report-a-journey-in-quality-engineering-and-testing/).
 Coding agents now build a feature for a few dollars, and an agent that tests its own work tests
@@ -85,14 +85,14 @@ who can see what. An **execution plane** runs next to your system — inside its
 namespace — and is the only thing that ever calls it. The execution plane reaches the control
 plane outbound only: your system's network needs egress, never an inbound route.
 
-## The two modes
+## The two ways to start a run
 
 | Mode | Runs | For |
 |---|---|---|
 | **Run** | whichever scenarios you ask for, once | authoring and iterating |
 | **Monitor** | your reviewed scenario set, on a schedule | watching a live system stay healthy |
 
-These are the two ways to use Argus. They are not the `mode` a run request names: a run you
+These are the two ways to start Argus; the site's three uses (holdout acceptance, under load, continuous) all run through them. They are not the `mode` a run request names: a run you
 start by hand has mode `build` (to iterate) or `final`, `rehearsal` or `scheduled` (to certify),
 and comparing two builds is its own call, `author_run_comparison` ([Comparing](/argus-compare)).
 

@@ -104,7 +104,7 @@ the **author token** and **builder token** are a person's; `ARGUS_EXECUTOR_SECRE
 > ones, with a warning. v0.3.39 and earlier read only the old names.
 
 The commands that read or run scenarios on the in-env side refuse outright if the two hat secrets
-aren't both configured. Local checks and setup commands need no token at all, for example
+aren't both configured. Local checks and setup commands run without a token (`preflight` reports a missing control-plane token as a blocking finding and still runs), for example
 `validate-scenario`, `validate-config`, `package-check`, `propose-from-repo`, `calm import`,
 `preflight`, `doctor` and `argus version`, and neither do a third party's `certificate verify` and
 `anchor verify`. A command that reads or runs scenarios, `list-scenarios` for example, refuses:

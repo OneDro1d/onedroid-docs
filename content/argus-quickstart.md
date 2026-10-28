@@ -45,7 +45,8 @@ The check must print `OK` for the archive before you unpack it. For another plat
 Mac, `sha256sum` is not installed by default: use `shasum -a 256 -c -` in its place.
 
 **Windows.** Releases are built for macOS and Linux only. On Windows, install WSL 2 and follow the
-Linux steps inside it.
+Linux steps inside it. The open runner's source also compiles for Windows, but that build is not
+released and not tested, and the onboarding kit is a set of bash scripts.
 
 Once you hold a token or an enrolled instance, cross-check the install against the version your
 control plane recommends (`min_recommended_version` in the `author_get_executor_status` MCP tool;

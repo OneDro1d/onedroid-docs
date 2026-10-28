@@ -35,7 +35,8 @@ the run.
 |---|---|
 | every check passed | success |
 | a check failed or could not be checked, or the run reports a degraded system | failure |
-| no verdict about your system (the executor was lost, there were no checks to run, every check was not applicable) | neutral |
+| the executor was lost, or there were no checks to run (no verdict) | neutral |
+| every check was not applicable (the verdict `not_applicable`: nothing was verified, so it is neither a pass nor a failure) | neutral |
 | the run was cancelled | cancelled |
 | no result 3 hours after the deployment | timed out, saying there is no verdict |
 

@@ -164,8 +164,11 @@ argus cloud-create-workspace --control-plane "$ARGUS_CP_URL" --name <name>
 ```
 
 `--scope` is required from v0.3.41 on, and there is no default: `author` for a tester or
-operator (the `cloud-*` commands and the test-agent tools), `runner` only for a builder session.
-Without it the sign-in stops before it starts:
+operator (the `cloud-*` commands and the test-agent tools). `runner` asks for builder tools only,
+but a builder does not need it: a builder uses a builder token and never signs in (see
+[The two kinds of token](#2-the-two-kinds-of-token) above and the
+[Builder guide](/argus-builder-guide#connect-your-session)).
+Without `--scope` the sign-in stops before it starts:
 
 ```json
 {

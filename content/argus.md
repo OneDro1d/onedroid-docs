@@ -53,9 +53,11 @@ Argus separates two roles, deliberately, and keeps them apart:
 - **A tester** writes and runs scenarios — plain-Markdown contracts that say what to trigger
   and what a healthy response looks like.
 - **A builder** — the agent (or person) who owns the system under test — fixes what's broken
-  and re-runs the tests to check the fix. The builder gets a pass/fail report built from
-  *observed* reality — logs, saga events, response bodies — and never the scenario's expected
-  values. It cannot read what it is being judged against.
+  and re-runs the tests to check the fix. The builder gets a pass/fail report of what its system
+  *actually did*: for a failed check, a description of the observed behaviour and, for an HTTP
+  check, the status it returned. It never gets the scenario's expected values, nor the log lines and response-body
+  excerpts a tester sees, since those can carry what the check looks for. It cannot read what it
+  is being judged against.
 
 This holdout is enforced twice, not once: by what a builder's credential is even allowed to
 call, and separately by what its own environment is allowed to hold a copy of. A builder that

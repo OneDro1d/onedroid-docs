@@ -111,7 +111,17 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.75. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.76. Each note below links to the section that has the detail.
+
+- **Fixes in v0.3.76**:
+  - `body has <field> equals null` now holds when the field holds JSON `null`. `body has <field>` still fails on a
+    `null`, and a missing field still fails `equals null`. Update the executor to v0.3.76 for this one.
+  - "Run this schedule now" refuses, with `run_refused`, a set your executor is too old to run, as an ordinary run
+    request already did. Nothing is queued.
+  - From step 5 of 8 on, Ctrl-C or a stop signal during onboarding stops it at once and starts the automatic
+    cleanup. It exits 130 (Ctrl-C) or 143 (stop signal).
+  - `argus certificate verify` prints a certificate's text quoted when it holds control, bidi or invisible
+    characters ([Ledger and certificates](/argus-ledger)).
 
 - **Paced loads, an executor CPU request, and clearer load and money-guard rules** (v0.3.75):
   - A load can be paced with `**Think Time Ms**` or `**Target Rate Per Minute**`, and the load record counts

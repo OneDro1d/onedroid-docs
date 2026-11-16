@@ -130,7 +130,8 @@ Argus config records it. Argus enforces what the config declares.
 
 For an app that moves money, the config has an optional safety switch. Set
 `money_handling: true` and Argus refuses any write the config does not list: plain HTTP GETs
-still run, and a check on a path naming an order, quote, swap, rebalance or claim is refused.
+still run, and a check on a path or query naming an order, quote, swap, rebalance or claim is refused
+(from v0.3.75 the host name is not read).
 To allow writes, list each one under `money_writes.allow`, with the limits you choose:
 
 ```yaml

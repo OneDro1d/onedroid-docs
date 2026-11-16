@@ -202,6 +202,7 @@ These render options decide what else lands in your cluster:
 | `--obs-storage-class <name>` | the tier's default | The storage class for the volumes that keep the execution plane's logs and metrics (v0.3.62 or later). See [Storage for logs and metrics](#storage-for-logs-and-metrics-v0362-or-later). |
 | `--podmonitor auto\|on\|off` | `auto` | The PodMonitor object in `obs.yaml`. `auto` includes it only if the cluster has the Prometheus Operator's PodMonitor type (it checks, read-only, through `--kube-context`). Use `off` on a cluster without the Prometheus Operator, where `kubectl create` would otherwise fail on that object. |
 | `--collect-sut-logs` | off | Also collect your system's own pod logs. Off by default, because those logs may carry user or agent content. When you turn it on, the render names the namespace it will read. |
+| `--executor-cpu-request <quantity>` | `150m` | The CPU the execution plane's pod asks the node for (v0.3.75 or later; also on `onboard.sh` and `argus up`). `--executor-cpu` sets only the limit, so on a busy node a high limit alone does not stop the pod being starved: raise the request too. It takes the same quantities as `--executor-cpu` and is refused if it is not a quantity, is below `50m`, or is above the limit (`--executor-cpu`, else 1). Each autoscaler replica reserves the request, so the node pool needs that much unreserved CPU or the extra replica stays Pending. On the Docker (compose) tier it is ignored, with a note. |
 
 **4. Create the objects. Use `create`, never `apply`:**
 
@@ -509,6 +510,14 @@ A run whose checks all belong to such targets asks Kubernetes nothing and says s
 reported `environment.captured: false` with a `forbidden` error. It cannot be combined with
 `namespace` on the same target. ⚠️ **Upgrade the executor before you add the key.** An executor older
 than v0.3.63 refuses the whole config.
+
+From v0.3.75, such a run records its measurement of the system as `not_measured`, with
+`not applicable: the target(s) … are declared outside the cluster`, instead of listing the
+execution plane's own pods as the system under test; the version readings do the same. A run that
+mixes these targets with in-cluster ones is measured as before. `argus render-k8s` takes no
+`--sut-namespace` when every test target is outside the cluster. An executor whose
+`--sut-namespace` is its own namespace no longer measures that namespace either: the record says
+`not measured: the SUT namespace … is this executor's own namespace`.
 
 ### Summary numbers from your environment's own metrics (v0.3.52 or later)
 
@@ -1132,7 +1141,11 @@ money_writes:
 
 - **An HTTP entry** exempts that one method and path from the GET-only and the money-word rules, and
   nothing else. A `{name}` placeholder is a whole path segment (`/orders/{id}`), and matches exactly
-  one non-empty segment. `GET` entries are allowed.
+  one non-empty segment. `GET` entries are allowed. From v0.3.75 the money-word rule reads a url's
+  path and query only, never the host: a host name that holds `order`, `quote`, `swap`,
+  `rebalance` or `claim` no longer needs an entry, while a word in the path or query
+  (`/api/swap`, `?action=swap`) is still refused. A url Argus cannot split with certainty (a
+  `${...}` in the host, no `scheme://`, a relative path) is still read whole.
 - **An amqp or mcp entry is all-or-nothing** for that operation or tool. Argus cannot cap it the way
   `max_amount` caps an HTTP body, so `spends` and the three limit fields are refused on such an entry.
 - **A `db` or `logs` entry** allows that step. `{engine: db}` covers `targets.database`, and
@@ -1609,6 +1622,45 @@ never change the verdict, the percentiles or `error_rate`.
 
 The `load target breached` sentence names the top reason.
 
+### Pacing a load (v0.3.75 or later)
+
+By default each simulated user sends its next request as soon as the last one is answered. Two
+optional keys in `## LOAD` pace it instead, on a check with a `## LOAD` section and on an
+**HTTP Load** scenario. Declare one, never both:
+
+- `**Think Time Ms**`: each user waits this long after each request, 1 to 600000.
+- `**Target Rate Per Minute**`: a cap on the request rate of the whole run, shared by all users. On
+  an HTTP Load scenario it applies to every step.
+
+```markdown
+## LOAD
+- **Users**: 20
+- **Duration Seconds**: 120
+- **Target P95 Ms**: 500
+- **Max Error Rate**: 0.01
+- **Target Rate Per Minute**: 600
+```
+
+Without a key nothing changes. Both need an executor at v0.3.75 or later: the control plane does
+not queue a set that uses either for an older executor, because an older executor would run the
+check unpaced. The Docker (compose) runner refuses a paced check rather than run it unpaced.
+
+The load record gains `rate_limited`: the requests the system answered 429. It is overall for a
+`## LOAD` check, and per step and in total for an HTTP ramp, and the run page shows it. A 429 still
+counts as an error, so no verdict changes.
+
+### What a `## LOAD` check judges (v0.3.75 or later)
+
+In a check with a `## LOAD` section, a `body …` line is judged on the samples answered 200 to 299,
+and the check fails if any of them fails it. A sample with another code (4xx, 5xx, a timeout, no
+response) is not judged on the body line; it counts in `**Max Error Rate**`, as before. The check
+is no longer failed on the body line by a few 502s that sit within that error rate. A 1xx or 3xx
+sample counts as a success only when the check declares that code in a runnable `status=` line
+(for example `status=302`), and its body line is then judged on it like a 2xx sample. An
+undeclared 1xx or 3xx sample is a failure: it counts as `failed` in the request panel and in the
+error rate. A check without `## LOAD` is judged as before. The HTTP Load ramp never judged a body
+line and is unchanged.
+
 ### AMQP load: allow a broker first (v0.3.52 or later)
 
 Argus runs AMQP load only against a broker you have marked as one that may take it. It is off by
@@ -1779,6 +1831,8 @@ Content-Type: application/json
 | **Target P95 Ms** | a step whose response p95 is above this is not comfortable | required | |
 | **Max Error Rate** | a step with more of its requests answered 400 or more, or not at all, is not comfortable | required | |
 | **Must Sustain** | the check fails unless this step was reached and was comfortable | none | one of the **Steps** |
+| **Think Time Ms** | each user waits this long after each request (v0.3.75 or later; [see pacing](#pacing-a-load-v0375-or-later)) | none | 1 to 600000; not with **Target Rate Per Minute** |
+| **Target Rate Per Minute** | a cap on the requests of every step, shared by all users (v0.3.75 or later) | none | not with **Think Time Ms** |
 
 `### Runnable` takes only `every step is measured` and `the smallest step is comfortable`. `Users`,
 `Duration Seconds`, the AMQP-only keys and a `status=` bullet are refused by name: a request counts
@@ -1798,7 +1852,8 @@ limits again when it runs, so a profile that skipped validation is refused rathe
 **Where the results show.** The same places as an AMQP ramp: one record per step in the run's
 `load_ramp` (`author_get_run_status`), with the driver `http`, users, the rates of requests started,
 answered and served below 400, the request-to-response time quantiles, failures by class
-(`status:<code>`, `timeout`, `transport`) with the reasons, and the step the ramp stopped at.
+(`status:<code>`, `timeout`, `transport`) with the reasons, the requests answered 429 as
+`rate_limited` (v0.3.75 or later; they still count as failures), and the step the ramp stopped at.
 
 ⚠️ **A load result is only as good as the environment it names.** Write down, next to the numbers,
 the environment (which cluster, whether it is the live system or a lab copy), its resources

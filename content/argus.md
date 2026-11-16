@@ -111,7 +111,18 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.72. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.75. Each note below links to the section that has the detail.
+
+- **Paced loads, an executor CPU request, and clearer load and money-guard rules** (v0.3.75):
+  - A load can be paced with `**Think Time Ms**` or `**Target Rate Per Minute**`, and the load record counts
+    requests answered 429 as `rate_limited`. Update the executor first. See
+    [Pacing a load](/argus-tester-guide#pacing-a-load-v0375-or-later).
+  - `--executor-cpu-request` sets the executor's CPU request (it was fixed at 150m). See the render options in
+    [the tester guide](/argus-tester-guide).
+  - In a `## LOAD` check a body line is judged on 2xx samples, and an undeclared 1xx or 3xx sample is a failure. See
+    [What a LOAD check judges](/argus-tester-guide#what-a-load-check-judges-v0375-or-later).
+  - The money guard reads a url's path and query, not its host.
+  - A run whose targets are all `outside_cluster: true` records its measurement as not applicable.
 
 - **Checks that depend on the environment** (v0.3.72): a check declares `- **Preconditions**: id=kind`
   and `- **Depends on**: id` in its `## Metadata`. If the cluster does not enforce NetworkPolicy, the

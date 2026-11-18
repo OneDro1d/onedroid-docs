@@ -72,7 +72,8 @@ first page, so keep a new page inside its section's range (the `section:` value,
 `Reference` 50–59.
 
 Navigation, `llms.txt`, `sitemap.xml` and `robots.txt` are all generated from the content.
-There is no separate list to keep in sync.
+There is no separate list to keep in sync, except the short product list at the top of
+`llms.txt`, which is written by hand in `build.mjs`.
 
 ## Agent-readable by construction
 

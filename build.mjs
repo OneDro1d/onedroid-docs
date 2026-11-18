@@ -248,7 +248,9 @@ files.set(
   `# OneDroid Docs\n\n` +
     `> Documentation for OneDroid Argus (end-to-end tests the builder cannot see), Dark\n` +
     `> Factory (the same governed agent on every machine), OneDroid Synapse (a governed MCP\n` +
-    `> gateway) and OneDroid Engram (versioned agent memory in your own Postgres).\n\n` +
+    `> gateway), OneDroid Engram (versioned agent memory in your own Postgres) and OneDroid\n` +
+    `> Indie (a free local recorder for Claude Code: signed sessions, agent claims checked\n` +
+    `> against the record, token cost per commit, leaked-credential alerts).\n\n` +
     `Every page below is also available as markdown by appending .md to its path, and is\n` +
     `served as markdown to AI-agent user-agents at the canonical URL.\n\n` +
     `## Docs\n\n` +

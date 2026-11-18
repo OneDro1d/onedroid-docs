@@ -11,6 +11,10 @@ is right and the site is stale.
 ## Layout
 
 - `content/*.md` — the docs. This is the only place to change what the site says.
+  Exception: `content/indie*.md` are made from `docs/PRODUCT.md` in OneDro1d/onedroid-indie
+  (each page names the commit). Change that file and regenerate; an edit here is overwritten.
+- `build.mjs` also holds the one hand-written intro of `llms.txt`, which names the products:
+  update it when a product is added.
 - `build.mjs` — markdown → `dist/`. One dependency (`marked`).
 - `middleware.js` — serves the markdown source to AI agents at the canonical URL.
 - `tools/`, `dist/`, `node_modules/` — not content. Never edit `dist/` by hand; it is generated.

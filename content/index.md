@@ -8,8 +8,8 @@ order: 1
 
 ## What these docs are
 
-These are the working manuals for OneDroid's four products: **OneDroid Argus**, **Dark
-Factory**, **OneDroid Synapse** and **OneDroid Engram**. Each section says what the product
+These are the working manuals for OneDroid's five products: **OneDroid Argus**, **Dark
+Factory**, **OneDroid Synapse**, **OneDroid Engram** and **OneDroid Indie**. Each section says what the product
 is for, takes you through setting it up step by step, gives the exact commands, fields and
 tool names, and lists the failures people actually hit, with the check that tells them apart.
 
@@ -74,6 +74,18 @@ there for the next, including the one you have not chosen yet.
 
 [What Engram is](/engram) · [Using Engram](/engram-usage) ·
 [The web app](/engram-web-app) · [Tool reference](/engram-tools)
+
+## OneDroid Indie — see what your Claude Code agent did, and what it cost
+
+OneDroid Indie is one free, open-source binary, `onedroid`, that records every Claude Code
+session on your machine in a signed record, turns an agent's claims into evidence a person can
+check, writes the token cost of each ticket into your commit messages, and watches for leaked
+credentials. Nothing leaves your machine unless you run a command that sends it. Every claim on
+these pages comes with the command to run and the output that proves it.
+
+[What Indie is](/indie) · [Dashboard](/indie-dashboard) · [Agent claims](/indie-claims) ·
+[Token cost](/indie-cost) · [Credentials](/indie-credentials) · [Privacy](/indie-privacy) ·
+[Known limits](/indie-limits)
 
 ## Something broken?
 

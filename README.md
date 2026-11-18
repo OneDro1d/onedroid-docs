@@ -4,7 +4,7 @@ Markdown source of truth for **[docs.onedroid.ai](https://docs.onedroid.ai)**.
 
 ## What these docs are
 
-The working manuals for OneDroid's four products: what each one is for, how to set it up step
+The working manuals for OneDroid's five products: what each one is for, how to set it up step
 by step, the exact commands, fields and tool names, and the failures people actually hit.
 The pitch lives on [onedroid.ai](https://onedroid.ai); this repo holds what to type and what
 you should see.
@@ -24,6 +24,7 @@ themselves (every page is served as markdown).
 | **Dark Factory** | The same governed agent (skills, hooks, hard stops) on every machine, decided by a lockfile | [`content/dark-factory.md`](content/dark-factory.md) · [docs.onedroid.ai/dark-factory](https://docs.onedroid.ai/dark-factory) |
 | **OneDroid Synapse** | A governed MCP gateway: one URL for every agent, credentials held for you, every call in an audit log you own | [`content/synapse.md`](content/synapse.md) · [docs.onedroid.ai/synapse](https://docs.onedroid.ai/synapse) |
 | **OneDroid Engram** | Versioned, permissioned agent memory in a Postgres you control | [`content/engram.md`](content/engram.md) · [docs.onedroid.ai/engram](https://docs.onedroid.ai/engram) |
+| **OneDroid Indie** | A free local recorder for Claude Code: signed session record, agent claims checked against it, token cost per commit, repo, day and session, leaked-credential alerts. Pages are made from `docs/PRODUCT.md` in the onedroid-indie repo | [`content/indie.md`](content/indie.md) · [docs.onedroid.ai/indie](https://docs.onedroid.ai/indie) |
 
 Each product has its own section in the sidebar, in that order, followed by Reference.
 
@@ -67,7 +68,7 @@ order: 32
 agent cannot identify is a page that will not be retrieved. `section` groups the nav,
 `order` sorts it, `nav` overrides the sidebar label. Sections appear in the order of their
 first page, so keep a new page inside its section's range (the `section:` value, then
-`order:`): `Start here` 1, `Argus` 10–19, `Dark Factory` 20–29, `Synapse` 30–39, `Engram` 40–49,
+`order:`): `Start here` 1, `Argus` 10–19, `Dark Factory` 20–29, `Synapse` 30–39, `Engram` 40–44, `Indie` 45–49,
 `Reference` 50–59.
 
 Navigation, `llms.txt`, `sitemap.xml` and `robots.txt` are all generated from the content.

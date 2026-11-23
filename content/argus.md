@@ -111,7 +111,17 @@ single test. See **[Ledger and certificates](/argus-ledger)**.
 
 ## What changed recently
 
-These pages describe Argus v0.3.76. Each note below links to the section that has the detail.
+These pages describe Argus v0.3.77. Each note below links to the section that has the detail.
+
+- **Name what a check tests, and see it on a Coverage tab** (v0.3.77):
+  - A check can carry `- **Covers**: R4.1 Data export, Login page` in its `## Metadata`: the requirements, parts
+    or features it tests. The v0.3.77 CLI accepts the line. An older CLI refuses it as an undefined key, so update
+    the CLI before you add it. See
+    [Name what a check tests](/argus-tester-guide#name-what-a-check-tests-v0377-or-later).
+  - The **Checks** page in the app has a **Coverage** tab: each name, the checks that cover it and their latest
+    result, with an export to PDF. See [What the Argus app shows](/argus-tester-guide#what-the-argus-app-shows).
+  - Fix: the teardown of an AMQP connection to a broker that stopped answering now closes the socket. Update the
+    executor to v0.3.77 for this one.
 
 - **Fixes in v0.3.76**:
   - `body has <field> equals null` now holds when the field holds JSON `null`. `body has <field>` still fails on a

@@ -1538,6 +1538,40 @@ precondition_probe:
   The claim is judged exactly as strictly as before. `${cid}` and `${correlation_id}` still show
   this run's own id. The builder's reduced report still leaves the claim list out.
 
+### Name what a check tests (v0.3.77 or later)
+
+A check can say what it tests with one optional line in its `## Metadata`:
+
+```markdown
+## Metadata
+- **ID**: EXP-001
+- **Layer**: HTTP Ingestion
+- **Covers**: R4.1 Data export, Login page
+```
+
+Each name between commas is one thing the check tests: a requirement, a part of the application, a
+feature. You decide. One check can name many things, and one thing can be named by many checks. The
+**Coverage** tab on the **Checks** page groups your checks by these names.
+
+- **Cleaning.** Spaces at both ends of a name are removed, repeated inner spaces become one, empty
+  names are dropped, and a name repeated in the same line is kept once. Upper and lower case are
+  different names.
+- **Limits.** At most 64 characters per name, and no control characters. There is no limit on the
+  number of names.
+- **One line.** A check has at most one Covers line. A Covers line with no names is valid and means no
+  names.
+- **Refusals**, at the Covers line, by `author_write_scenario`, `author_validate_scenario`,
+  `argus doctor` and `argus validate-scenario`:
+  - `The Covers name "<name>" has <n> characters; the limit is 64.`
+  - `The Covers name "<name>" holds a control character.` (each control character is shown as `?`)
+  - `Only one **Covers** line is allowed in ## Metadata; merge the names into one line.`
+- **Spelling.** The key is `Covers` exactly. `**Cover**` or `**covers**` is refused as an undefined
+  Metadata key, with "Did you mean `**Covers**`?".
+- **Running.** Nothing changes in how the check runs. An executor older than v0.3.77 runs a check that
+  carries the line exactly as before.
+- **Older CLIs.** An `argus` CLI older than v0.3.77 refuses the line as an undefined Metadata key, so
+  `argus validate-scenario` and `argus doctor` fail on such a check until you update the CLI.
+
 ## Monitor schedules
 
 Once a hand-run is green — or every red in it is one you've read and decided to keep — turn on
@@ -1909,7 +1943,7 @@ ids and transaction hashes.
 | **Overview** | Is it OK? | One verdict and a tile per system. Health comes from **monitor** runs only: a run you start by hand never turns it red, a monitor that stopped firing turns it amber (late), and a system no monitor has measured reads "not measured", never green. Also **Needs a person**, the capacity card and the latest certified release. |
 | **Capacity** | How much load can it take? | The measured limit of the latest completed load run for each system and target. |
 | **Runs** | What happened? | Every run, on a timeline and in a table. |
-| **Checks** | What is tested? | Your scenarios. |
+| **Checks** | What is tested? | Your scenarios, on two tabs: **Catalog** lists every check, and **Coverage** lists each name your checks give in their `Covers` line, with the checks that cover it and their latest result. |
 | **Proof** | Can I prove it? | Certified releases first, then every anchor. See [Ledger and certificates](/argus-ledger). |
 
 - **Needs a person** lists what Argus works out by itself and also what you file. File an item with
@@ -1926,6 +1960,10 @@ ids and transaction hashes.
 - **Capacity details.** A run's page shows a **Load steps** table. A value the step did not measure
   reads "not measured", never 0. The Capacity page shows the largest step that was comfortable with
   every smaller step comfortable too, with the date and the version it was measured on.
+- **Coverage.** A check's latest result there is the result of its latest run. A check that has not run
+  since its `Covers` line was added reads "run not recorded" until it runs again. **Export to PDF** builds
+  the PDF in your browser from what the tab shows; nothing is stored. See
+  [Name what a check tests](#name-what-a-check-tests-v0377-or-later).
 - **A runner id** is minted from **Settings → Environments**.
 
 ## Related

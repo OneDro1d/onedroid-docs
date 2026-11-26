@@ -89,6 +89,10 @@ Add `"params": {"expect_commit": "<git sha>"}` to also require the log to name t
 - Give each check an `idempotency_key` (any string up to 128 characters). Repeating the same
   check with the same key answers the same record and is charged once. The same key with
   different content inside 24 hours is refused (`409 idempotency-conflict`).
+- Repeating a check over files (same claim, files, method, visibility, label and key) inside
+  24 hours, even under a new idempotency key, gives back the same record: the answer has
+  `"replayed": true` and price 0, and is not charged again. To get a new record, change the
+  `label`. Judged checks and checks over a web page always run again.
 - A check that takes longer than `options.wait` seconds (default 10, at most 60) answers
   `{"job_id": "…", "pending": true}` instead. Ask `claim_job` with that `job_id` until its state
   is `done` (the answer is in it) or `failed`.

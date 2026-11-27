@@ -63,9 +63,10 @@ Add `"params": {"expect_commit": "<git sha>"}` to also require the log to name t
 
 `SUPPORTED`, `judged-supports`, 11 credits, about 2 seconds.
 
-- **`allow_provider: true` is required on a private check**, because the evidence is sent to the
-  model providers through OpenRouter (in our runs: OpenAI, Google AI Studio and DeepInfra). Without
-  it: `422 provider-not-allowed`, nothing charged.
+- **`allow_provider: true` is required on a private check**, because the evidence is sent, through
+  OpenRouter, to one or more AI models the witness has selected: commercial, publicly available or
+  open-weight models, run by their makers or by hosting providers. The models in use and their prices
+  are in `claim_price`. Without it: `422 provider-not-allowed`, nothing charged.
 - `models` is one of two shapes. `{"count": n}` (1 to 5) asks the top n models of the ranked list
   (`claim_price`), rank 1 first. `{"ids": ["vendor/model", ...]}` (1 to 5, no repeats) asks exactly those
   models: listed ones, or any plain OpenRouter model id, with `max_credits_per_run` (1 to 1,000, default 50)

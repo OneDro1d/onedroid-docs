@@ -78,7 +78,8 @@ Credits pay for checks. 1 credit is US$0.001. To get credits, email michal@onedr
 
 | What | Credits |
 | --- | --- |
-| A check with no model (`match.exact`, `quote.in-source`, `tests.pass`, …) | 1 |
+| A check with no model over files you send (`match.exact`, `quote.in-source`, `tests.pass`, …) | 1 |
+| A check with no model over a page or an observation (`page.live`, `match.text` on a url or an observation id) | only its fresh observations: 0 when it reuses an observation |
 | `judge.supports` | 1, plus 10 per model (11 with one model, 31 with three) |
 | A page observation | 5, and the first 50 fresh observations a day are free |
 | Stored evidence files | 1 per MB per month |

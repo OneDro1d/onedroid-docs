@@ -184,7 +184,7 @@ A refusal is not a record and charges nothing.
 | Answer | Meaning | What to do |
 | --- | --- | --- |
 | `401 unauthorized` | No key, or not a valid one | See [Set up](/claim-witness-setup#4-connect-your-agent) |
-| `402 insufficient_credits` (`available`, `needed`) | Credits cannot cover the check | Add credits |
+| `402 insufficient_credits` (`available`, `needed`) | Credits cannot cover the check | Add credits. To get credits, email michal@onedroid.ai. |
 | `402 key_spend_limit` | This key is over its own spend limit | Raise it or use another key |
 | `403 scope` | The key has no claim scope | Change the key's scope |
 | `409 idempotency-conflict` | Same idempotency key, different check | Use a new key for a new check |

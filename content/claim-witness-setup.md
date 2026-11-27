@@ -23,7 +23,7 @@ Open **Account → Credits** (https://evidence.onedroid.ai/account/credits). A n
 ```
 
 Nothing is charged or held when that happens. During the preview OneDroid adds credits by hand;
-there is no purchase page yet. 100 credits is enough for 100 checks without a model, or 9
+there is no purchase page yet. To get credits, email michal@onedroid.ai. 100 credits is enough for 100 checks without a model, or 9
 judged checks with one model.
 
 ## 3. Make an API key

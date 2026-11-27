@@ -74,7 +74,7 @@ every method with its slots, parameters and limits.
 
 ## Price
 
-Credits pay for checks. 1 credit is US$0.001.
+Credits pay for checks. 1 credit is US$0.001. To get credits, email michal@onedroid.ai.
 
 | What | Credits |
 | --- | --- |

@@ -16,7 +16,7 @@ HTTP API.
   verifying them offline, and what each refusal means.
 
 > **Preview.** The claim witness runs on OneDroid's development environment
-> (`claims-dev.onedroid.ai`, `app.onedroid.ai`). Records are signed with the development key
+> (`evidence.onedroid.ai`, `app.onedroid.ai`). Records are signed with the development key
 > `witness:onedroid-dev:2026a`. There is no production service yet.
 
 ## The three answers

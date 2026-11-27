@@ -57,7 +57,7 @@ export ONEDROID_CLAIM_KEY='odk_…'   # your key, from step 3
   "mcpServers": {
     "onedroid-claims": {
       "type": "http",
-      "url": "https://claims-dev.onedroid.ai/mcp",
+      "url": "https://evidence.onedroid.ai/mcp",
       "headers": { "Authorization": "Bearer ${ONEDROID_CLAIM_KEY}" }
     }
   }
@@ -70,7 +70,7 @@ Start Claude Code in that folder and approve the `onedroid-claims` server when i
 
 | Setting | Value |
 | --- | --- |
-| Address | `https://claims-dev.onedroid.ai/mcp` |
+| Address | `https://evidence.onedroid.ai/mcp` |
 | Transport | Streamable HTTP (one JSON-RPC message per POST, answered as `application/json`), protocol `2025-06-18` |
 | Header | `Authorization: Bearer odk_…` |
 

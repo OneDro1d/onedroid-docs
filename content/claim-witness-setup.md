@@ -84,7 +84,7 @@ another client that can send a header.
 
 ### Plain HTTP
 
-The same checks are a REST API at `https://app-dev.onedroid.ai/bff/v1/witness/…`, with the same key.
+The same checks are a REST API at `https://app.onedroid.ai/bff/v1/witness/…`, with the same key.
 The full reference is https://evidence.onedroid.ai/docs/claim-witness. Two differences from MCP:
 each file needs its `sha256`, and the claim object must have exactly five fields. See
 [Daily use](/claim-witness-daily-use#plain-http).

@@ -120,7 +120,7 @@ That is charged per MB per month.
 Anyone can check a record without an account and without trusting OneDroid's servers.
 
 1. Download the proof bundle: `claim_record` with `record_id` and `part: "bundle"` (a tar file), or
-   `GET https://app-dev.onedroid.ai/bff/v1/witness/records/<record_id>/bundle`.
+   `GET https://app.onedroid.ai/bff/v1/witness/records/<record_id>/bundle`.
 2. Get the verifier, which is Python 3 standard library plus, if installed, `cryptography`:
 
    ```bash
@@ -167,7 +167,7 @@ cat > check.json <<'EOF'
    "sha256": "<sha256 of b.txt>", "content_b64": "<base64 of b.txt>"}],
  "options": {"visibility": "private"}}
 EOF
-curl -sS -X POST https://app-dev.onedroid.ai/bff/v1/witness/checks \
+curl -sS -X POST https://app.onedroid.ai/bff/v1/witness/checks \
   -H "Authorization: Bearer $ONEDROID_CLAIM_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: $(uuidgen)" \

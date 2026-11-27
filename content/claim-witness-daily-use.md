@@ -66,7 +66,11 @@ Add `"params": {"expect_commit": "<git sha>"}` to also require the log to name t
 - **`allow_provider: true` is required on a private check**, because the evidence is sent to the
   model providers through OpenRouter (in our runs: OpenAI, Google AI Studio and DeepInfra). Without
   it: `422 provider-not-allowed`, nothing charged.
-- `models.count` is 1 to 3, one model per vendor; `require` (default: all) is how many must agree.
+- `models` is one of two shapes. `{"count": n}` (1 to 5) asks the top n models of the ranked list
+  (`claim_price`), rank 1 first. `{"ids": ["vendor/model", ...]}` (1 to 5, no repeats) asks exactly those
+  models: listed ones, or any plain OpenRouter model id, with `max_credits_per_run` (1 to 1,000, default 50)
+  capping each unlisted run. `require` (default: all) is how many must agree. A decision model answers with
+  probabilities and no quotes; a chat model quotes the evidence and the witness checks each quote.
   `claim_price` lists the models.
 - 1 to 5 evidence files, up to about 200,000 tokens. The statement is at most 4,000 characters.
 - Evidence that looks like instructions to a model ("ignore previous instructions", `system:` at

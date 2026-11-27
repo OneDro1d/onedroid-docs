@@ -47,7 +47,7 @@ Nine of the ten methods are plain code. One, `judge.supports`, asks language mod
 | `match.exact` | two files are byte-identical | two files |
 | `quote.in-source` | a quoted passage is in a file | one file and the quote |
 | `tests.pass` | a test log reports at least one test and no failures (Jest `--json`, `go test -json`, JUnit XML, or pytest's summary line) | the log |
-| `judge.supports` | one to three language models read the evidence and judge one sentence | 1 to 5 files |
+| `judge.supports` | one to five language models read the evidence and judge one sentence | 1 to 5 files |
 | `page.live` | a web page answers | its address |
 | `match.text` | a file's text is on a web page | a file and the page |
 | `match.screenshot` | a screenshot is consistent with a web page (private checks only) | an image and the page |
@@ -80,7 +80,7 @@ Credits pay for checks. 1 credit is US$0.001. To get credits, email michal@onedr
 | --- | --- |
 | A check with no model over files you send (`match.exact`, `quote.in-source`, `tests.pass`, …) | 1 |
 | A check with no model over a page or an observation (`page.live`, `match.text` on a url or an observation id) | only its fresh observations: 0 when it reuses an observation |
-| `judge.supports` | 1, plus 10 per model (11 with one model, 31 with three) |
+| `judge.supports` | 1, plus each model's credits per run: 10 for each model on today's list (11 with one model, 51 with five); a model not on the list costs what OpenRouter charges for the run plus 2, never more than `max_credits_per_run` |
 | A page observation | 5, and the first 50 fresh observations a day are free |
 | Stored evidence files | 1 per MB per month |
 

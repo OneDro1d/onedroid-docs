@@ -15,9 +15,9 @@ HTTP API.
 - [Daily use](/claim-witness-daily-use): which check to use, examples, keeping and sharing records,
   verifying them offline, and what each refusal means.
 
-> **Preview.** The claim witness runs on OneDroid's development environment
-> (`evidence.onedroid.ai`, `app.onedroid.ai`). Records are signed with the development key
-> `witness:onedroid-dev:2026a`. There is no production service yet.
+> **Preview.** The claim witness is new. Records are signed by the witness `witness:onedroid`
+> with the key `witness:onedroid:2026a`. Public records are listed at
+> https://onedroid.ai/evidence/records.
 
 ## The three answers
 
@@ -55,7 +55,7 @@ Nine of the ten methods are plain code. One, `judge.supports`, asks language mod
 | `record.valid` | an earlier record is validly signed and sealed | its id and the key list |
 | `record.disclose` | publishes an earlier private record unchanged | its id and disclosure |
 
-`claim_methods` (or `GET https://app.onedroid.ai/bff/v1/witness/methods`, no key needed) lists
+`claim_methods` (or `GET https://evidence.onedroid.ai/api/witness/methods`, no key needed) lists
 every method with its slots, parameters and limits.
 
 ## Signed, sealed, and kept only if you ask
@@ -84,5 +84,5 @@ Credits pay for checks. 1 credit is US$0.001. To get credits, email michal@onedr
 | A page observation | 5, and the first 50 fresh observations a day are free |
 | Stored evidence files | 1 per MB per month |
 
-`claim_price` (or `GET https://app.onedroid.ai/bff/v1/witness/price`) gives the current list and
+`claim_price` (or `GET https://evidence.onedroid.ai/api/witness/price`) gives the current list and
 the models a judged check can use.

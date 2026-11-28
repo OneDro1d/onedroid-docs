@@ -108,7 +108,7 @@ A record is held for 24 hours, then only its fingerprint and seal stay with OneD
 
 1. **Keep**: `claim_keep` with `record_id`, `envelope` and, for a private record, `disclosure`
    (all three come from the check's answer). The answer includes its page,
-   `https://evidence.onedroid.ai/r/<record_id>`. Keeping twice is harmless.
+   `https://onedroid.ai/evidence/r/<record_id>`. Keeping twice is harmless.
 2. **List**: `claim_records` lists your kept private records.
 3. **Share**: `claim_share_create` with `record_id` and `days` gives a link and a token **once**.
    Whoever has it can read the private record. `claim_share_list` shows your shares (never the
@@ -116,6 +116,21 @@ A record is held for 24 hours, then only its fingerprint and seal stay with OneD
 4. **Delete**: `claim_delete` deletes a private record's stored data and key. The signed envelope
    (fingerprints only) and its seal stay and still verify, and copies people already took stay
    with them. A public record is taken down instead, with `claim_takedown`.
+
+### Public records need your consent
+
+A public check (`options.visibility: "public"`), a public observation and keeping a public record
+need your confirmation of this sentence: "I confirm the claim and evidence use only public
+information, or information I am legally allowed to publish."
+
+- Over MCP, pass `"consent": true` to `claim_check`, `claim_observe` or `claim_keep`, and only after
+  you have confirmed it.
+- Over HTTP, send `"consent": true` and
+  `"consent_text_sha256": "a432fa62d8c782026ae715666ced72580edd19de6bea14f6db415242aef08bcb"`
+  (the sha256 of that sentence) in the request body.
+
+Without it the answer is `422 consent-required`, and nothing is charged. A private record needs no
+consent.
 
 To keep the evidence files too, pass `keep_evidence_days` (1 to 3,650) with the files to `claim_keep`.
 That is charged per MB per month.
@@ -125,7 +140,7 @@ That is charged per MB per month.
 Anyone can check a record without an account and without trusting OneDroid's servers.
 
 1. Download the proof bundle: `claim_record` with `record_id` and `part: "bundle"` (a tar file), or
-   `GET https://app.onedroid.ai/bff/v1/witness/records/<record_id>/bundle`.
+   `GET https://evidence.onedroid.ai/api/witness/records/<record_id>/bundle`.
 2. Get the verifier, which is Python 3 standard library plus, if installed, `cryptography`:
 
    ```bash
@@ -172,14 +187,14 @@ cat > check.json <<'EOF'
    "sha256": "<sha256 of b.txt>", "content_b64": "<base64 of b.txt>"}],
  "options": {"visibility": "private"}}
 EOF
-curl -sS -X POST https://app.onedroid.ai/bff/v1/witness/checks \
+curl -sS -X POST https://evidence.onedroid.ai/api/witness/checks \
   -H "Authorization: Bearer $ONEDROID_CLAIM_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: $(uuidgen)" \
   -d @check.json
 ```
 
-A 202 answer has a `job_id`: poll `GET /bff/v1/witness/checks/<job_id>`. The full REST reference is
+A 202 answer has a `job_id`: poll `GET https://evidence.onedroid.ai/api/witness/checks/<job_id>`. The full REST reference is
 https://evidence.onedroid.ai/docs/claim-witness.
 
 ## When a check is refused
@@ -196,6 +211,7 @@ A refusal is not a record and charges nothing.
 | `422 provider-not-allowed` | Judged private check without `allow_provider` | Add `"allow_provider": true` if the evidence may go to model providers |
 | `422 invalid-evidence` | A file is missing a field, for example `sha256` over HTTP | Read `detail` |
 | `422 personal-data` | A public check holds personal data | Make it private |
+| `422 consent-required` | A public check, observation or keep without your consent | See [Public records need your consent](#public-records-need-your-consent) |
 | `429` with `Retry-After` | Too many requests a minute, or too many credits this hour | Wait that many seconds, resend with the same idempotency key |
 
 Over MCP each refusal is a tool error with `status` and `code`.
